@@ -90,7 +90,6 @@ int main(int argc, const char** argv)
 
   //set boundary conditions
 
-
   int left_range[] = {0, 1};
   int right_range[] = {n, n+1};
 
@@ -137,9 +136,6 @@ int main(int argc, const char** argv)
 
   while ( t < _time )
   {
-
-    
-
     
     ops_par_loop(apply_stencil, "apply_stencil", block, 1, interior_range, 
       ops_arg_dat(d_u,    1, S1D_3pt, "double", OPS_READ),
