@@ -21,9 +21,15 @@ double mu1 = 5.0;
 double mu2 = 0.0;
 double eps = 50.0;
 
+double dx = 1.0;
+double dy = 1.0;
+double Lx = dx*(Nx-1);
+double Ly = dy*(Ny-1);
+
 double hmu1dt=mu1/h/h*dt;
 double hmu2dt=mu2/h/h*dt;
 double diva = 1/a;
+
 
 
 void printValues(double* u, int rows, int cols, char *filename) {
@@ -116,6 +122,12 @@ int main(int argc, const char** argv)
   ops_decl_const("mu1",1,"double",&mu1);
   ops_decl_const("mu2",1,"double",&mu2);
   ops_decl_const("eps",1,"double",&eps);
+
+  ops_decl_const("dx",1,"double",&dx);
+  ops_decl_const("dy",1,"double",&dy);
+  ops_decl_const("Lx",1,"double",&Lx);
+  ops_decl_const("Ly",1,"double",&Ly);
+
   ops_decl_const("hmu1dt",1,"double",&hmu1dt);
   ops_decl_const("hmu2dt",1,"double",&hmu2dt);
   ops_decl_const("div_a",1,"double",&div_a);
@@ -151,9 +163,43 @@ int main(int argc, const char** argv)
   //Stencil declaration
 
   ops_partition("");
+
+
   
+  //loop ranges
+  int bottom_left[] = {0, 1, 0, 1};
 
+  int bottom_right[] = {Nx-1, Nx, 0, 1};
 
+  int top_left[] = {0, 1, Ny-1, Ny};
+
+  int top_right[] = {Nx-1, Nx, Ny-1, Ny};
+
+  int bottom[] = {0, Nx, 0, 1};
+
+  int top[] = {0, Nx, Ny-1, Ny};
+
+  int left[] = {0, 1, 0, Ny};
+
+  int right[] = {Nx-1, Nx, Ny-1, Ny};
+
+  int interior[] = {1, Nx-1, 1, Ny-1};
+
+  int all[] = {0, Nx, 0, Ny};
+
+  ops_par_loop(set_zero, "set_zero", block, 2, all,
+      ops_arg_dat(d_u, 1, S2D_00, "double", OPS_WRITE));
+
+  ops_par_loop(set_zero, "set_zero", block, 2, all,
+    ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
+
+  ops_par_loop(set_zero, "set_zero", block, 2, all,
+      ops_arg_dat(d_v, 1, S2D_00, "double", OPS_WRITE));
+
+  ops_par_loop(set_zero, "set_zero", block, 2, all,
+    ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+  
  // Implementing u(x, y) = {1 if y > Ly/2; 0 otherwise} @ t = 0
  // Stencil {0, 0}
     int Ly = Ny - 1;
