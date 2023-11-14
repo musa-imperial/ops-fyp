@@ -54,17 +54,8 @@ int main(int argc, const char** argv)
 	int prog = 0;
 	
 	// Precomputing end index of the grid array
-
-  double dt = 0.01;
-	double T = 200;
   //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-	int    Nx = 101;
-	int    Ny = 101;
-	double a = 0.75;
-	double b = 0.06;
-	double mu1 = 5.0;
-	double mu2 = 0.0;
-	double eps = 50.0;
+	
 
 	int end = Nx*Ny - 1;
 	
@@ -100,9 +91,35 @@ int main(int argc, const char** argv)
                                d_m, d_p, v_calc,    "double", "v_calc");
 
 
-  ops_decl_const("imax",1,"int",&imax);
-  ops_decl_const("jmax",1,"int",&jmax);
-  ops_decl_const("pi",1,"double",&pi);
+  double dt = 0.01;
+  double T = 100;
+  //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
+  int    Nx = 101;
+  int    Ny = 101;
+  double a = 0.75;
+  double b = 0.06;
+  double mu1 = 5.0;
+  double mu2 = 0.0;
+  double eps = 50.0;
+
+  double hmu1dt=mu1/h/h*dt;
+  double hmu2dt=mu2/h/h*dt;
+  double div_a = 1/a;
+
+
+  ops_decl_const("dt",1,"double",&dt);
+  ops_decl_const("T",1,"double",&T);
+  ops_decl_const("Nx",1,"int",&Nx);
+  ops_decl_const("Ny",1,"int",&Ny);
+  ops_decl_const("a",1,"double",&a);
+  ops_decl_const("b",1,"double",&b);
+  ops_decl_const("mu1",1,"double",&mu1);
+  ops_decl_const("mu2",1,"double",&mu2);
+  ops_decl_const("eps",1,"double",&eps);
+  ops_decl_const("hmu1dt",1,"double",&hmu1dt);
+  ops_decl_const("hmu2dt",1,"double",&hmu2dt);
+  ops_decl_const("div_a",1,"double",&div_a);
+  //ops_decl_const("pi",1,"double",&pi);
 
 
   int s2d_00[] = {0,0};
@@ -133,7 +150,8 @@ int main(int argc, const char** argv)
 
   //Stencil declaration
 
-
+  ops_partition("");
+  
 
 
  // Implementing u(x, y) = {1 if y > Ly/2; 0 otherwise} @ t = 0
