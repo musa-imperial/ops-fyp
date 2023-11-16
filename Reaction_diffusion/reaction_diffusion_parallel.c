@@ -8,7 +8,7 @@
 #define OPS_2D
 #include <ops_seq_v2.h>
 
-#include "reaction_diffusion_kernels.h"
+
 
 double dt = 0.01;
 double T = 100;
@@ -25,10 +25,13 @@ double dx = 1.0;
 double dy = 1.0;
 double Lx = dx*(Nx-1);
 double Ly = dy*(Ny-1);
+double h = dx;
 
 double hmu1dt=mu1/h/h*dt;
 double hmu2dt=mu2/h/h*dt;
-double diva = 1/a;
+double div_a = 1/a;
+
+#include "reaction_diffusion_kernels.h"
 
 
 
@@ -57,13 +60,13 @@ int main(int argc, const char** argv)
 {
   ops_init(argc, argv,1);
 	// Tracking progress to print to terminal
-	int prog = 0;
+	//int prog = 0;
 	
 	// Precomputing end index of the grid array
   //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
 	
 
-	int end = Nx*Ny - 1;
+	//int end = Nx*Ny - 1;
 	
 	// Variables for the parallel code
 	//int i, j;
@@ -127,6 +130,7 @@ int main(int argc, const char** argv)
   ops_decl_const("dy",1,"double",&dy);
   ops_decl_const("Lx",1,"double",&Lx);
   ops_decl_const("Ly",1,"double",&Ly);
+  ops_decl_const("h",1,"double",&h);
 
   ops_decl_const("hmu1dt",1,"double",&hmu1dt);
   ops_decl_const("hmu2dt",1,"double",&hmu2dt);
@@ -137,21 +141,38 @@ int main(int argc, const char** argv)
   int s2d_00[] = {0,0};
   ops_stencil S2D_00 = ops_decl_stencil(2,1,s2d_00,"0,0");
 
-  //point x = 0,  y = 0 stencil
-  int s2d_x0y0[] = {0,0   1,0,  0,1};
-  ops_stencil S2D_X0Y0 = ops_decl_stencil(2,3,s2d_x0y0,"x0y0");
+  //corner bc stencils
+  //point x = 0,  y = 0 stencil (bottom_left)
+  int s2d_bottom_left[] = {0,0,   1,0,  0,1};
+  ops_stencil S2D_BOTTOM_LEFT = ops_decl_stencil(2,3,s2d_bottom_left,"bottom_left");
 
-  //point x = 0,  y = Ny-1 stencil
-  int s2d_x0yNy[] = {0,0  1,0, 0,-1};
-  ops_stencil S2D_X0YNY = ops_decl_stencil(2,3,s2d_x0yNy,"x0yNy");
+  //point x = 0,  y = Ny-1 stencil (top_left)
+  int s2d_top_left[] = {0,0,  1,0, 0,-1};
+  ops_stencil S2D_TOP_LEFT = ops_decl_stencil(2,3,s2d_top_left,"top_left");
 
-  //point x = Nx-1, y = 0 stencil
-  int s2d_xNxy0[] = {0,0  -1,0, 0,1};
-  ops_stencil S2D_XNXY0 = ops_decl_stencil(2,3,s2d_xNxy0,"xNxy0");
+  //point x = Nx-1, y = 0 stencil (bottom_right)
+  int s2d_bottom_right[] = {0,0,  -1,0, 0,1};
+  ops_stencil S2D_BOTTOM_RIGHT = ops_decl_stencil(2,3,s2d_bottom_right,"bottom_right");
 
-  //point x = Nx-1, y = Ny-1 stencil
-  int s2d_xNxyNy[] = {0,0, -1,0,  0,-1};
-  ops_stencil S2D_XNXYNY = ops_decl_stencil(2,3,s2d_xNxyNy,"xNxyNy");
+  //point x = Nx-1, y = Ny-1 stencil (top_right)
+  int s2d_top_right[] = {0,0, -1,0,  0,-1};
+  ops_stencil S2D_TOP_RIGHT = ops_decl_stencil(2,3,s2d_top_right,"top_right");
+
+  //bc stencils
+  int s2d_left[] = {0,0, 1,0, 0,1, 0,-1};
+  ops_stencil S2D_LEFT = ops_decl_stencil(2,4,s2d_left,"left");
+
+  int s2d_right[] = {0,0, -1,0, 0,1, 0,-1};
+  ops_stencil S2D_RIGHT = ops_decl_stencil(2,4,s2d_right,"right");
+
+  int s2d_top[] = {0,0, 1,0, -1,0, 0,-1};
+  ops_stencil S2D_TOP = ops_decl_stencil(2,4,s2d_top,"top");
+
+  int s2d_bottom[] = {0,0, 1,0, -1,0, 0,1};
+  ops_stencil S2D_BOTTOM = ops_decl_stencil(2,4,s2d_bottom,"bottom");
+
+  int s2d_interior[] = {0,0, 1,0, -1,0, 0,1, 0,-1};
+  ops_stencil S2D_INTERIOR = ops_decl_stencil(2,5,s2d_interior,"interior");
 
   // u      = (double*)malloc((Nx*Ny) * sizeof(double));
   // u_calc = (double*)malloc((Nx*Ny) * sizeof(double));
@@ -205,12 +226,117 @@ int main(int argc, const char** argv)
         ops_arg_dat(d_u,    1, S2D_00, "double", OPS_WRITE),
         ops_arg_idx());
 
-    ops_par_loop(v_initcond_stencil, "v_initcond_stencil", block, 2, all,
+  ops_par_loop(v_initcond_stencil, "v_initcond_stencil", block, 2, all,
         ops_arg_dat(d_v,    1, S2D_00, "double", OPS_WRITE),
         ops_arg_idx());
 
-  ops_print_dat_to_txtfile(d_u, "initial_condition_check.txt");
-  ops_printf("Program Complete");
+
+  for (double t = 0.0; t < T; t += dt) {
+
+    //  Corner boundary conditions
+    ops_par_loop(bottomleft_u, "bottomleft_u", block, 2, bottom_left,
+        ops_arg_dat(d_u,    1,   S2D_BOTTOM_LEFT, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(bottomleft_v, "bottomleft_v", block, 2, bottom_left,
+        ops_arg_dat(d_v,    1,   S2D_BOTTOM_LEFT, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(topleft_u, "topleft_u", block, 2, top_left,
+        ops_arg_dat(d_u,    1,   S2D_TOP_LEFT, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(topleft_v, "topleft_v", block, 2, top_left,
+        ops_arg_dat(d_v,    1,   S2D_TOP_LEFT, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(bottomright_u, "bottomright_u", block, 2, bottom_right,
+        ops_arg_dat(d_u,    1,   S2D_BOTTOM_RIGHT, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(bottomright_v, "bottomright_v", block, 2, bottom_right,
+        ops_arg_dat(d_v,    1,   S2D_BOTTOM_RIGHT, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(topright_u, "topright_u", block, 2, top_right,
+        ops_arg_dat(d_u,    1,   S2D_TOP_RIGHT, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(topright_v, "topright_v", block, 2, top_right,
+        ops_arg_dat(d_v,    1,   S2D_TOP_RIGHT, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    //
+
+    ops_par_loop(left_bndcon_u, "left_bndcon_u", block, 2, left,
+        ops_arg_dat(d_u,    1,   S2D_LEFT, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(left_bndcon_v, "left_bndcon_v", block, 2, left,
+        ops_arg_dat(d_v,    1,   S2D_LEFT, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(right_bndcon_u, "right_bndcon_u", block, 2, right,
+        ops_arg_dat(d_u,    1,   S2D_RIGHT, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(right_bndcon_v, "right_bndcon_v", block, 2, right,
+        ops_arg_dat(d_v,    1,   S2D_RIGHT, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ///
+    ops_par_loop(top_bndcon_u, "top_bndcon_u", block, 2, top,
+        ops_arg_dat(d_u,    1,   S2D_TOP, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(top_bndcon_v, "top_bndcon_v", block, 2, top,
+        ops_arg_dat(d_v,    1,   S2D_TOP, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(bottom_bndcon_u, "bottom_bndcon_u", block, 2, bottom,
+        ops_arg_dat(d_u,    1,   S2D_BOTTOM, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(bottom_bndcon_v, "bottom_bndcon_v", block, 2, bottom,
+        ops_arg_dat(d_v,    1,   S2D_BOTTOM, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(interior_stencil_u, "interior_stencil_u", block, 2, interior,
+        ops_arg_dat(d_u,    1,   S2D_INTERIOR, "double", OPS_READ),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    ops_par_loop(interior_stencil_v, "interior_stencil_v", block, 2, interior,
+        ops_arg_dat(d_v,    1,   S2D_INTERIOR, "double", OPS_READ),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+
+    ops_par_loop(copy, "copy", block, 2, all,
+        ops_arg_dat(d_A,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_Anew, 1, S2D_00, "double", OPS_READ));
+    
+
+
+  }
+  //ops_print_dat_to_txtfile(d_u, "initial_condition_check.txt");
+  //ops_printf("Program Complete");
 //  // Implementing u(x, y) = {1 if y > Ly/2; 0 otherwise} @ t = 0
 //  // Stencil {0, 0}
 //     int Ly = Ny - 1;
