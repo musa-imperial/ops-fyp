@@ -150,16 +150,19 @@ void ReactionDiffusion::TimeIntegrate() {
        int i = 0;
        //The boundary conditions for the corners using neumann boundary conditions
 
-       
+        // bottom left
         // {0,0,  1,0,  0,1}
         u[t2] = (hmu1dt*laplacianuc(1, Nx, ts)+f1(ts))+u[ts];
 
+        // top left
         // {0,0,   0,-1}
         u[NxNy-Nx] = (hmu1dt*laplacianuc(NxNy-Nx+1, NxNy-Nx2, NxNy-Nx)+f1(NxNy-Nx))+u[NxNy-Nx];
 
+        // bottom right
         // {0,0, -1,0,   0,1}
         u[Nx-1] = (hmu1dt*laplacianuc(Nx-2, Nx-1+Nx, Nx-1)+f1(Nx-1))+u[Nx-1];
 
+        // top right
         // {0,0  -1,0  1,0}  
         u[NxNy-Nx+Nx-1] = (hmu1dt*laplacianuc(NxNy-Nx+Nx-2, NxNy-Nx2+Nx-1, NxNy-Nx+Nx-1)+f1(NxNy-Nx+Nx-1))+u[NxNy-Nx+Nx-1]; 
 
