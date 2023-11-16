@@ -14,7 +14,7 @@ include $(OPS_INSTALL_PATH)/../makefiles/Makefile.hdf5
 
 HEADERS=reaction_diffusion_kernels.h
 
-OPS_FILES=reaction_diffusion_parallel.cpp
+OPS_FILES=reaction_diffusion_parallel.c
 
 OPS_GENERATED=reaction_diffusion_parallel_ops.cpp
 
