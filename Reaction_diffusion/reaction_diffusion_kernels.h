@@ -87,13 +87,13 @@ void bottomright_v(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B
 
 void topright_u(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu1dt*laplacian_corner(A(-1, 0), A(1, 0), A(0, 0))+f1(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu1dt*laplacian_corner(A(-1, 0), A(0, -1), A(0, 0))+f1(A(0, 0), B(0, 0)));
 
 }
 
 void topright_v(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu2dt*laplacian_corner(A(-1, 0), A(1, 0), A(0, 0))+f2(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu2dt*laplacian_corner(A(-1, 0), A(0, -1), A(0, 0))+f2(A(0, 0), B(0, 0)));
 
 }
 
