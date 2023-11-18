@@ -10,11 +10,11 @@
 
 
 
-double dt = 0.01;
-double T = 100;
+double dt = 0.001;
+//double T = 0.02;
 //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-int    Nx = 101;
-int    Ny = 101;
+int    Nx = 10;
+int    Ny = 10;
 double a = 0.75;
 double b = 0.06;
 double mu1 = 5.0;
@@ -74,18 +74,22 @@ int main(int argc, const char** argv)
 	//double aInv = 1/a; // precomputing 1/a to avoid division
 	//int col;
 	
-	double *u = NULL;
+  double *u = NULL;
   double *u_calc= NULL;
   double *v= NULL;
   double *v_calc= NULL;
+  printf("T = %s \n", argv[1]);
+  double T = atof(argv[1]);
+
+  //double T = 0.02;
 
   ops_block block = ops_decl_block(2, "my_grid");
   //ops_block v_block = ops_decl_block(2, "my_grid");
 
   int size[] = {Nx, Ny};
   int base[] = {0, 0};
-  int d_m[] = {-1, -1};
-  int d_p[] = {1, 1};
+  int d_m[] =  {-1, -1};
+  int d_p[] =  {1, 1};
 
   ops_dat d_u    = ops_decl_dat(block, 1, size, base,
                                d_m, d_p, u,    "double", "u");
@@ -98,23 +102,6 @@ int main(int argc, const char** argv)
 
   ops_dat d_v_calc    = ops_decl_dat(block, 1, size, base,
                                d_m, d_p, v_calc,    "double", "v_calc");
-
-
-  double dt = 0.01;
-  double T = 100;
-  //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-  int    Nx = 101;
-  int    Ny = 101;
-  double a = 0.75;
-  double b = 0.06;
-  double mu1 = 5.0;
-  double mu2 = 0.0;
-  double eps = 50.0;
-
-  double hmu1dt=mu1/h/h*dt;
-  double hmu2dt=mu2/h/h*dt;
-  double div_a = 1/a;
-
 
   ops_decl_const("dt",1,"double",&dt);
   ops_decl_const("T",1,"double",&T);
@@ -188,25 +175,25 @@ int main(int argc, const char** argv)
 
   
   //loop ranges
-  int bottom_left[] = {0, 1, 0, 1};
+  int bottom_left[] = {-1, 0, -1, 0};
 
-  int bottom_right[] = {Nx-1, Nx, 0, 1};
+  int bottom_right[] = {Nx, Nx+1, -1, 0};
 
-  int top_left[] = {0, 1, Ny-1, Ny};
+  int top_left[] = {-1, 0, Ny, Ny+1};
 
-  int top_right[] = {Nx-1, Nx, Ny-1, Ny};
+  int top_right[] = {Nx, Nx+1, Ny, Ny+1};
 
-  int bottom[] = {0, Nx, 0, 1};
+  int bottom[] = {0, Nx, -1, 0};
 
-  int top[] = {0, Nx, Ny-1, Ny};
+  int top[] = {0, Nx, Ny, Ny+1};
 
-  int left[] = {0, 1, 0, Ny};
+  int left[] = {-1, 0, 0, Ny};
 
-  int right[] = {Nx-1, Nx, Ny-1, Ny};
+  int right[] = {Nx, Nx+1, 0, Ny};
 
-  int interior[] = {1, Nx-1, 1, Ny-1};
+  int interior[] = {0, Nx, 0, Ny};
 
-  int all[] = {0, Nx, 0, Ny};
+  int all[] = {-1, Nx+1, -1, Ny+1};
 
   ops_par_loop(set_zero, "set_zero", block, 2, all,
       ops_arg_dat(d_u, 1, S2D_00, "double", OPS_WRITE));
@@ -320,179 +307,28 @@ int main(int argc, const char** argv)
     ops_par_loop(interior_stencil_u, "interior_stencil_u", block, 2, interior,
         ops_arg_dat(d_u,    1,   S2D_INTERIOR, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(interior_stencil_v, "interior_stencil_v", block, 2, interior,
         ops_arg_dat(d_v,    1,   S2D_INTERIOR, "double", OPS_READ),
         ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
         ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
-
     ops_par_loop(copy, "copy", block, 2, all,
-        ops_arg_dat(d_A,    1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_Anew, 1, S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_u,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_READ));
     
-
+    ops_par_loop(copy, "copy", block, 2, all,
+        ops_arg_dat(d_v,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_READ));
+    
 
   }
-  //ops_print_dat_to_txtfile(d_u, "initial_condition_check.txt");
-  //ops_printf("Program Complete");
-//  // Implementing u(x, y) = {1 if y > Ly/2; 0 otherwise} @ t = 0
-//  // Stencil {0, 0}
-//     int Ly = Ny - 1;
-//     int yLim = Ly/2 + Ny%2;
-//     for (int i = 0; i < Nx; i++) {
-//       for (int j = yLim; j < Ny; j++) {
-//         u[i*Ny + j] = 1.0;
-//       }
-//     }
-    
-//     // Implementing v(x, y) = {a/2 if x < Lx/2; 0 otherwise} @ t = 0
-//     // Stencil {0, 0}
-//     int Lx = Nx - 1;
-//     int xLim = Lx/2 - Nx%2;
-//     for (int i = 0; i < xLim; i++) {
-//       for (int j = 0; j < Ny; j++) {
-//         v[i*Ny + j] = a * 0.5;
-//       }
-//     }
+  ops_print_dat_to_txtfile(d_u, "u_check.txt");
+  ops_print_dat_to_txtfile(d_v, "v_check.txt");
 
-// 	for (double t = 0.0; t < T; t += dt) {
-// 		// x = 0, y = 0 node calculation for u and v
-
-
-// 		u_calc[0] = u[0] + dt * (
-// 			mu1 * (u[Ny] + u[1] - 2.0*u[0]) +
-// 			eps*u[0] * (1.0 - u[0]) * (u[0] - (v[0] + b) * aInv));
-// 		v_calc[0] = v[0] + dt * (
-// 			mu2 * (v[Ny] + v[1] - 2.0*v[0]) +
-// 			u[0]*u[0]*u[0] - v[0]);
-		
-// 		// x = 0 inner column calculation for u and v
-//     // Stencil {0,0,  -1,0,  1,0   0,1}
-
-// 		for (j = 1; j < Ny-1; ++j) {
-// 			u_calc[j] = u[j] + dt * (
-// 				mu1 * (u[j-1] + u[j+1] + u[Ny + j] - 3.0*u[j]) +
-// 				eps*u[j] * (1.0 - u[j]) * (u[j] - (v[j] + b) * aInv));
-// 		}
-
-//     // Stencil {0,0,  -1,0,  1,0   0,1}
-// 		for (j = 1; j < Ny-1; ++j) {
-// 			v_calc[j] = v[j] + dt * (
-// 				mu2 * (v[j-1] + v[j+1] + v[Ny + j] - 3.0*v[j]) +
-// 				u[j]*u[j]*u[j] - v[j]);
-// 		}
-		
-// 		// x = 0, y = Ny-1 node calculation for u and v
-// 		u_calc[Ny-1] = u[Ny-1] + dt * (
-// 			mu1 * (u[Ny-2] + u[2*Ny-1] - 2.0*u[Ny-1]) +
-// 			eps*u[Ny-1] * (1.0 - u[Ny-1]) * (u[Ny-1] - (v[Ny-1] + b) * aInv));
-// 		v_calc[Ny-1] = v[Ny-1] + dt * (
-// 			mu2 * (v[Ny-2] + v[2*Ny-1] - 2.0*v[Ny-1]) +
-// 			u[Ny-1]*u[Ny-1]*u[Ny-1] - v[Ny-1]);
-		
-        
-//         for (i = 1; i < Nx-1; ++i) {
-//             col = i*Ny; // precomputing current column for use
-            
-//             // y = 0 boundary calculation for current column
-
-//             // Stencil {0,0,  0,-1,  1,0   0,1}
-//             u_calc[col] = u[col] + dt * (
-//                 mu1 * (u[(i-1)*Ny] + u[col + 1] + u[(i+1)*Ny] - 3.0*u[col]) +
-//                 eps*u[col] * (1.0 - u[col]) * (u[col] - (v[col] + b) * aInv));
-//             v_calc[col] = v[col] + dt * (
-//                 mu2 * (v[(i-1)*Ny] + v[col + 1] + v[(i+1)*Ny] - 3.0*v[col]) +
-//                 u[col]*u[col]*u[col] - v[col]);
-            
-//             // Calculation of inside of the current column for u and v
-//             // Stencil {0,0,   1,-1,   1,1,   -1,0,   1,0}
-//             for (j = 1; j < Ny-1; ++j) {
-//                 u_calc[col + j] = u[col + j] + dt * (
-//                     mu1 * (u[(i-1)*Ny + j] + u[(i+1)*Ny + j] + u[col + j-1] + u[col + j+1] - 4.0*u[col + j]) +
-//                     eps*u[col + j] * (1.0 - u[col + j]) * (u[col + j] - (v[col + j] + b) * aInv));
-//             }
-//             // Stencil {0,0,   1,-1,   1,1,   -1,0,   1,0}
-//             for (j = 1; j < Ny-1; ++j) {
-//                 v_calc[col + j] = v[col + j] + dt * (
-//                     mu2 * (v[(i-1)*Ny + j] + v[(i+1)*Ny + j] + v[col + j-1] + v[col + j+1] - 4.0*v[col + j]) +
-//                     u[col + j]*u[col + j]*u[col + j] - v[col + j]);
-//             }
-            
-//             // y = Ny-1 boundary calculation for current column
-
-//             // Stencil {0,0,   -1,-1,   0,-1,   1,-1}
-//             u_calc[(i+1)*Ny - 1] = u[(i+1)*Ny - 1] + dt * (
-//                 mu1 * (u[col - 1] + u[(i+1)*Ny - 2] + u[(i+2)*Ny - 1] - 3.0*u[(i+1)*Ny - 1]) +
-//                 eps*u[(i+1)*Ny - 1] * (1.0 - u[(i+1)*Ny - 1]) * (u[(i+1)*Ny - 1] - (v[(i+1)*Ny - 1] + b) * aInv));
-//             v_calc[(i+1)*Ny - 1] = v[(i+1)*Ny - 1] + dt * (
-//                 mu2 * (v[col - 1] + v[(i+1)*Ny - 2] + v[(i+2)*Ny - 1] - 3.0*v[(i+1)*Ny - 1]) +
-//                 u[(i+1)*Ny - 1]*u[(i+1)*Ny - 1]*u[(i+1)*Ny - 1] - v[(i+1)*Ny - 1]);
-//         }
-		
-// 		// END PARALLEL REGION
-		
-// 		// x = Nx-1, y = 0 node calculation for u and v
-
-//     // Stencil {0,0, 0,-1,  1,0}
-
-// 		u_calc[end-Ny + 1] = u[end-Ny + 1] + dt * (
-// 			mu1 * (u[end-2*Ny + 1] + u[end-Ny + 2] - 2.0*u[end-Ny + 1]) +
-// 			eps*u[end-Ny + 1] * (1.0 - u[end-Ny + 1]) * (u[end-Ny + 1] - (v[end-Ny + 1] + b) * aInv));
-// 		v_calc[end-Ny + 1] = v[end-Ny + 1] + dt * (
-// 			mu2 * (v[end-Ny + 1-Ny] + v[end-Ny + 1 + 1] - 2.0*v[end-Ny + 1]) +
-// 			u[end-Ny + 1]*u[end-Ny + 1]*u[end-Ny + 1] - v[end-Ny + 1]);
-		
-// 		// x = Nx-1 inner column calculation for u and v
-
-//     // Stencil {0,0, -1,0,  1,0, -1,0}
-
-// 		for (j = 1; j < Ny-1; ++j) {
-// 			u_calc[end-Ny + 1 + j] = u[end-Ny + 1 + j] + dt * (
-// 				mu1 * (u[end-Ny + j] + u[end-Ny + j+2] + u[end-2*Ny + 1 + j] - 3.0*u[end-Ny + 1 + j]) +
-// 				eps*u[end-Ny + 1 + j] * (1.0 - u[end-Ny + 1 + j]) * (u[end-Ny + 1 + j] - (v[end-Ny + 1 + j] + b) * aInv));
-// 		}
-// 		for (j = 1; j < Ny-1; ++j) {
-// 			v_calc[end-Ny + 1 + j] = v[end-Ny + 1 + j] + dt * (
-// 				mu2 * (v[end-Ny + j] + v[end-Ny + j+2] + v[end-2*Ny + 1 + j] - 3.0*v[end-Ny + 1 + j]) +
-// 				u[end-Ny + 1 + j]*u[end-Ny + 1 + j]*u[end-Ny + 1 + j] - v[end-Ny + 1 + j]);
-// 		}
-		
-// 		// x = Nx-1, y = Ny-1 node calculation for u and v
-// 		u_calc[end] = u[end] + dt * (
-// 			mu1 * (u[end-Ny] + u[end-1] - 2.0*u[end]) +
-// 			eps*u[end] * (1.0 - u[end]) * (u[end] - (v[end] + b) * aInv));
-// 		v_calc[end] = v[end] + dt * (
-// 			mu2 * (v[end-Ny] + v[end-1] - 2.0*v[end]) +
-// 			u[end]*u[end]*u[end] - v[end]);
-		
-// 		// Swapping arround array pointers 
-
-//     // Stencil {0,0}
-//     for (int j = 0; j < Ny+1; j++) {
-//       for (int i = 0; i < Nx+1; i++) {
-//         u[j*Nx+i] = u_calc[j*Nx+i];
-//         v[j*Nx+i] = v_calc[j*Nx+i];
-//       }
-
-//     }
-		
-// 		// Displaying progress
-		
-// 		if ((int)(t/T * 100) != prog) {
-// 			prog = (int)(t/T * 100);
-//       printf("%d%%...\n", prog);
-//       //printf("%.2f\n", t);
-// 		}
-		
-// 	}
-	
-	// printf("-- Finished solving --\n");
-
-  // printValues(u, Nx, Ny, "u_values");
-  // printValues(v, Nx, Ny, "v_values");
   //Finalising the OPS library
+  
   ops_exit();
   free(u);
   free(u_calc);
