@@ -2,7 +2,8 @@
 //#define laplacianv(a, b, c, d) ((a+b+c-3*d))
 #define laplacian_corner(a, b, c) ((a+b-2*c))
 //#define laplacianvc(a, b, c) ((a+b-2*c))
-#define f1(u, v) (eps*a*(1-u)*(u-(v+b)*div_a))*dt
+//#define f1(a) (epsilon*u[a]*(1-u[a])*(u[a]-(v[a]+b)*diva))*dt
+#define f1(u, v) (eps*u*(1-u)*(u-(v+b)*div_a))*dt
 #define f2(v, u) (u*u*u-v)*dt
 
 void set_zero(ACC<double> &A) {

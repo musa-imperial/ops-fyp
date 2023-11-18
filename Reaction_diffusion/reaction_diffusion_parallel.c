@@ -13,8 +13,8 @@
 double dt = 0.001;
 //double T = 0.02;
 //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-int    Nx = 10;
-int    Ny = 10;
+int    Nx = 99;
+int    Ny = 99;
 double a = 0.75;
 double b = 0.06;
 double mu1 = 5.0;
