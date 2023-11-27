@@ -1,11 +1,3 @@
-#define laplacian(a, b, c, d) ((a+b+c-3*d))
-//#define laplacianv(a, b, c, d) ((a+b+c-3*d))
-#define laplacian_corner(a, b, c) ((a+b-2*c))
-//#define laplacianvc(a, b, c) ((a+b-2*c))
-//#define f1(a) (epsilon*u[a]*(1-u[a])*(u[a]-(v[a]+b)*diva))*dt
-#define f1(u, v) (eps*u*(1-u)*(u-(v+b)*div_a))*dt
-#define f2(v, u) (u*u*u-v)*dt
-
 void set_zero(ACC<double> &A) {
     A(0, 0) = 0.0;
 }
@@ -13,19 +5,6 @@ void set_zero(ACC<double> &A) {
 void copy(ACC<double> &A, const ACC<double> &Anew) {
     A(0, 0) = Anew(0, 0);
 }
-
-// void left_bndcon(ACC<double> &A, const int *idx) {
-//     A(0, 0) = 0;
-// }
-
-// void right_bndcon(ACC<double> &A, const int *idx) {
-//     A(0, 0) = A(-1, 0);
-// }
-
-// void apply_stencil(const ACC<double> &A, ACC<double> &Anew) {
-//     Anew(0, 0) = C1*A(1, 0)+C2*A(0, 0)+C3*A(-1, 0);
-// }
-
 
 void u_initcond_stencil(ACC<double> &A, const int *idx) {
 
@@ -52,89 +31,89 @@ void v_initcond_stencil(ACC<double> &A, const int *idx) {
 
 void bottomleft_u(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu1dt*laplacian_corner(A(1, 0), A(0, 1), A(0, 0))+f1(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu1dt*(A(1, 0) + A(0, 1) - 2 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt);
 
 }
 
 void bottomleft_v(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu2dt*laplacian_corner(A(1, 0), A(0, 1), A(0, 0))+f2(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu2dt*(A(1, 0) + A(0, 1) - 2 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt);
 
 }
 
 void topleft_u(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu1dt*laplacian_corner(A(1, 0), A(0, -1), A(0, 0))+f1(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu1dt*(A(1, 0) + A(0, -1) - 2 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt);
 
 }
 
 void topleft_v(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu2dt*laplacian_corner(A(1, 0), A(0, -1), A(0, 0))+f2(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu2dt*(A(1, 0) + A(0, -1) - 2 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt);
 
 }
 
 void bottomright_u(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu1dt*laplacian_corner(A(-1, 0), A(0, 1), A(0, 0))+f1(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu1dt*(A(-1, 0) + A(0, 1) - 2 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt);
 
 }
 
 void bottomright_v(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu2dt*laplacian_corner(A(-1, 0), A(0, 1), A(0, 0))+f2(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu2dt*(A(-1, 0) + A(0, 1) - 2 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt);
 
 }
 
 void topright_u(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu1dt*laplacian_corner(A(-1, 0), A(0, -1), A(0, 0))+f1(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu1dt*(A(-1, 0) + A(0, -1) - 2 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt);
 
 }
 
 void topright_v(const ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
     
-     Anew(0, 0) = A(0, 0)+(hmu2dt*laplacian_corner(A(-1, 0), A(0, -1), A(0, 0))+f2(A(0, 0), B(0, 0)));
+     Anew(0, 0) = A(0, 0)+(hmu2dt*(A(-1, 0) + A(0, -1) - 2 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt);
 
 }
 
 //top, bottom, left and right boundary condition kernels
 void left_bndcon_u(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu1dt*laplacian(A(1, 0), A(0, 1), A(0, -1), A(0, 0))+f1(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu1dt*(A(1, 0) + A(0, 1) + A(0, -1) - 3 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt;
 }
 
 void left_bndcon_v(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu2dt*laplacian(A(1, 0), A(0, 1), A(0, -1), A(0, 0))+f2(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu2dt*(A(1, 0) + A(0, 1) + A(0, -1) - 3 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt;
 }
 
 void right_bndcon_u(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu1dt*laplacian(A(-1, 0), A(0, 1), A(0, -1), A(0, 0))+f1(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu1dt*(A(-1, 0) + A(0, 1) + A(0, -1) - 3 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt;
 }
 
 void right_bndcon_v(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu2dt*laplacian(A(-1, 0), A(0, 1), A(0, -1), A(0, 0))+f2(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu2dt*(A(-1, 0) + A(0, 1) + A(0, -1) - 3 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt;
 }
 ////////
 void top_bndcon_u(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu1dt*laplacian(A(1, 0), A(-1, 0), A(0, -1), A(0, 0))+f1(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu1dt*(A(1, 0) + A(-1, 0) + A(0, -1) - 3 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt;
 }
 
 void top_bndcon_v(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu2dt*laplacian(A(1, 0), A(-1, 0), A(0, -1), A(0, 0))+f2(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu2dt*(A(1, 0) + A(-1, 0) + A(0, -1) - 3 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt;
 }
 
 void bottom_bndcon_u(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu1dt*laplacian(A(1, 0), A(-1, 0), A(0, 1), A(0, 0))+f1(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu1dt*(A(1, 0) + A(-1, 0) + A(0, 1) - 3 * A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt;
 }
 
 void bottom_bndcon_v(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu2dt*laplacian(A(1, 0), A(-1, 0), A(0, 1), A(0, 0))+f2(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu2dt*(A(1, 0) + A(-1, 0) + A(0, 1) - 3 * A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt;
 }
 
 void interior_stencil_u(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu1dt*(A(1, 0)+A(-1, 0)+A(0, 1)+A(0, -1)-4*A(0, 0))+f1(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu1dt*(A(1, 0)+A(-1, 0)+A(0, 1)+A(0, -1)-4*A(0, 0))+(eps * A(0, 0) * (1 - A(0, 0)) * (A(0, 0) - (B(0, 0) + b) * div_a)) * dt;
 }
 
 void interior_stencil_v(ACC<double> &A, ACC<double> &Anew, const ACC<double> &B) {
-    Anew(0, 0) = A(0, 0)+hmu2dt*(A(1, 0)+A(-1, 0)+A(0, 1)+A(0, -1)-4*A(0, 0))+f2(A(0, 0), B(0, 0));
+    Anew(0, 0) = A(0, 0)+hmu2dt*(A(1, 0)+A(-1, 0)+A(0, 1)+A(0, -1)-4*A(0, 0))+(B(0, 0) * B(0, 0) * B(0, 0) - A(0, 0)) * dt;
 }
