@@ -2,16 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define OPS_2D
-#include <ops_seq_v2.h>
-
 
 
 double dt = 0.001;
-//double T = 0.02;
+double T = 100;
 //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-int    Nx = 99;
-int    Ny = 99;
+int    Nx = 251;
+int    Ny = 251;
 double a = 0.75;
 double b = 0.06;
 double mu1 = 5.0;
@@ -28,29 +25,10 @@ double hmu1dt=mu1/h/h*dt;
 double hmu2dt=mu2/h/h*dt;
 double div_a = 1/a;
 
+
+#define OPS_2D
+#include <ops_seq_v2.h>
 #include "reaction_diffusion_kernels.h"
-
-
-
-void printValues(double* u, int rows, int cols, char *filename) {
-
-  FILE *file = fopen(filename, "w");
-
-    // Check if the file is opened successfully
-    if (file == NULL) {
-        printf("Error: Unable to open the file.\n");
-        //return 1; // Exit with an error code
-    }
-  
-  for (int j = 0; j < rows; j++) {
-    for (int i = 0; i < cols; i++) {
-      fprintf(file, "%3f ", u[j * cols + i]);
-    }
-    fprintf(file, "\n");
-  }
-
-  fclose(file);
-}
 
 
 int main(int argc, const char** argv)
@@ -66,18 +44,21 @@ int main(int argc, const char** argv)
   double *u_calc= NULL;
   double *v= NULL;
   double *v_calc= NULL;
-  printf("T = %s \n", argv[1]);
-  double T = atof(argv[1]);
 
-  //double T = 0.02;
+  double ct0, ct1, et0, et1;
+  
+//   printf("T = %s \n", argv[1]);
+//   double T = atof(argv[1]);
+
+//   double T = 10;
 
   ops_block block = ops_decl_block(2, "my_grid");
   //ops_block v_block = ops_decl_block(2, "my_grid");
 
   int size[] = {Nx, Ny};
-  int base[] = {0, 0};
-  int d_m[] =  {-1, -1};
-  int d_p[] =  {1, 1};
+  int base[] = {0,0};
+  int d_m[] =  {-1,-1};
+  int d_p[] =  {1,1};
 
   ops_dat d_u    = ops_decl_dat(block, 1, size, base,
                                d_m, d_p, u,    "double", "u");
@@ -175,17 +156,20 @@ int main(int argc, const char** argv)
 
   int all[] = {-1, Nx+1, -1, Ny+1};
 
-  ops_par_loop(set_zero, "set_zero", block, 2, all,
-      ops_arg_dat(d_u, 1, S2D_00, "double", OPS_WRITE));
+  ops_timers(&ct0, &et0);
+  //int all[] = {0, Nx, 0, Ny};
 
-  ops_par_loop(set_zero, "set_zero", block, 2, all,
-    ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
+//   ops_par_loop(set_zero, "set_zero", block, 2, bottom,
+//       ops_arg_dat(d_u, 1, S2D_00, "double", OPS_WRITE));
 
-  ops_par_loop(set_zero, "set_zero", block, 2, all,
-      ops_arg_dat(d_v, 1, S2D_00, "double", OPS_WRITE));
+//   ops_par_loop(set_zero, "set_zero", block, 2, all,
+//     ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
 
-  ops_par_loop(set_zero, "set_zero", block, 2, all,
-    ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+//   ops_par_loop(set_zero, "set_zero", block, 2, all,
+//       ops_arg_dat(d_v, 1, S2D_00, "double", OPS_WRITE));
+
+//   ops_par_loop(set_zero, "set_zero", block, 2, all,
+//     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
 
 
   //set initial condition
@@ -306,6 +290,12 @@ int main(int argc, const char** argv)
   }
   ops_print_dat_to_txtfile(d_u, "u_check.txt");
   ops_print_dat_to_txtfile(d_v, "v_check.txt");
+
+
+  ops_timers(&ct1, &et1);
+  ops_timing_output(std::cout);
+
+  ops_printf("\nTotal Wall time %lf\n",et1-et0);
 
   //Finalising the OPS library
   
