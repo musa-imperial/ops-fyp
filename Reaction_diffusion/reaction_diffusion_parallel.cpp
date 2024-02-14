@@ -7,13 +7,13 @@
 double dt = 0.001;
 double T = 100;
 //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-int    Nx = 251;
-int    Ny = 251;
+int    Nx = 501;
+int    Ny = 501;
 double a = 0.75;
 double b = 0.06;
 double mu1 = 5.0;
 double mu2 = 0.0;
-double eps = 50.0;
+double eps = 13.0;
 
 double dx = 1.0;
 double dy = 1.0;
@@ -188,96 +188,107 @@ int main(int argc, const char** argv)
     ops_par_loop(bottomleft_u, "bottomleft_u", block, 2, bottom_left,
         ops_arg_dat(d_u,    1,   S2D_BOTTOM_LEFT, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(bottomleft_v, "bottomleft_v", block, 2, bottom_left,
         ops_arg_dat(d_v,    1,   S2D_BOTTOM_LEFT, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(bottomleft_v, "bottomleft_v", block, 2, bottom_left,
+    //     ops_arg_dat(d_v,    1,   S2D_BOTTOM_LEFT, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(topleft_u, "topleft_u", block, 2, top_left,
         ops_arg_dat(d_u,    1,   S2D_TOP_LEFT, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(topleft_v, "topleft_v", block, 2, top_left,
         ops_arg_dat(d_v,    1,   S2D_TOP_LEFT, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(topleft_v, "topleft_v", block, 2, top_left,
+    //     ops_arg_dat(d_v,    1,   S2D_TOP_LEFT, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(bottomright_u, "bottomright_u", block, 2, bottom_right,
         ops_arg_dat(d_u,    1,   S2D_BOTTOM_RIGHT, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(bottomright_v, "bottomright_v", block, 2, bottom_right,
         ops_arg_dat(d_v,    1,   S2D_BOTTOM_RIGHT, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(bottomright_v, "bottomright_v", block, 2, bottom_right,
+    //     ops_arg_dat(d_v,    1,   S2D_BOTTOM_RIGHT, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(topright_u, "topright_u", block, 2, top_right,
         ops_arg_dat(d_u,    1,   S2D_TOP_RIGHT, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(topright_v, "topright_v", block, 2, top_right,
         ops_arg_dat(d_v,    1,   S2D_TOP_RIGHT, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(topright_v, "topright_v", block, 2, top_right,
+    //     ops_arg_dat(d_v,    1,   S2D_TOP_RIGHT, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     //
 
     ops_par_loop(left_bndcon_u, "left_bndcon_u", block, 2, left,
         ops_arg_dat(d_u,    1,   S2D_LEFT, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(left_bndcon_v, "left_bndcon_v", block, 2, left,
         ops_arg_dat(d_v,    1,   S2D_LEFT, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(left_bndcon_v, "left_bndcon_v", block, 2, left,
+    //     ops_arg_dat(d_v,    1,   S2D_LEFT, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(right_bndcon_u, "right_bndcon_u", block, 2, right,
         ops_arg_dat(d_u,    1,   S2D_RIGHT, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(right_bndcon_v, "right_bndcon_v", block, 2, right,
         ops_arg_dat(d_v,    1,   S2D_RIGHT, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(right_bndcon_v, "right_bndcon_v", block, 2, right,
+    //     ops_arg_dat(d_v,    1,   S2D_RIGHT, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ///
     ops_par_loop(top_bndcon_u, "top_bndcon_u", block, 2, top,
         ops_arg_dat(d_u,    1,   S2D_TOP, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(top_bndcon_v, "top_bndcon_v", block, 2, top,
         ops_arg_dat(d_v,    1,   S2D_TOP, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(top_bndcon_v, "top_bndcon_v", block, 2, top,
+    //     ops_arg_dat(d_v,    1,   S2D_TOP, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(bottom_bndcon_u, "bottom_bndcon_u", block, 2, bottom,
         ops_arg_dat(d_u,    1,   S2D_BOTTOM, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(bottom_bndcon_v, "bottom_bndcon_v", block, 2, bottom,
         ops_arg_dat(d_v,    1,   S2D_BOTTOM, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
+
+    // ops_par_loop(bottom_bndcon_v, "bottom_bndcon_v", block, 2, bottom,
+    //     ops_arg_dat(d_v,    1,   S2D_BOTTOM, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
 
     ops_par_loop(interior_stencil_u, "interior_stencil_u", block, 2, interior,
         ops_arg_dat(d_u,    1,   S2D_INTERIOR, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_v,    1,   S2D_00, "double", OPS_READ));
-
-    ops_par_loop(interior_stencil_v, "interior_stencil_v", block, 2, interior,
         ops_arg_dat(d_v,    1,   S2D_INTERIOR, "double", OPS_READ),
-        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
-        ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+        ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE));
 
+    // ops_par_loop(interior_stencil_v, "interior_stencil_v", block, 2, interior,
+    //     ops_arg_dat(d_v,    1,   S2D_INTERIOR, "double", OPS_READ),
+    //     ops_arg_dat(d_v_calc, 1, S2D_00, "double", OPS_WRITE),
+    //     ops_arg_dat(d_u,    1,   S2D_00, "double", OPS_READ));
+
+    // std::swap<double*>(u, u_calc);
+	// std::swap<double*>(v, v_calc);
     ops_par_loop(copy, "copy", block, 2, all,
         ops_arg_dat(d_u,    1, S2D_00, "double", OPS_WRITE),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_READ));
@@ -291,13 +302,15 @@ int main(int argc, const char** argv)
   ops_print_dat_to_txtfile(d_u, "u_check.txt");
   ops_print_dat_to_txtfile(d_v, "v_check.txt");
 
-
+  
   ops_timers(&ct1, &et1);
   ops_timing_output(std::cout);
 
   ops_printf("\nTotal Wall time %lf\n",et1-et0);
 
   //Finalising the OPS library
+
+  //ops_printf("%lf", u[0]);
   
   ops_exit();
   free(u);
