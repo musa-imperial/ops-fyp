@@ -15,21 +15,33 @@ int nf = 3;
 int mx = nf*nx;
 int my = nf*ny;  
 
-double xlx, yly, CFL, dlx, dx, xmu, xkt, um0, vm0, tm0;
-double xba, gma, chp, eta, uu0, dlt, um, vm, tm, x, y, dy;
-
 //Square cylinder global variables
 double d = 1.0;
 double radius = d/2;
 
+double xlx = 4*d;
+double yly = 4*d;
+double dlx = xlx/nx;
+double dly = yly/ny;
+double CFL, xmu, xkt, dx, um0, vm0, tm0;
+double xba, gma, chp, eta, uu0, dlt, um, vm, tm, x, y, dy;
+
+//FROM INITL SUBROUTINE
+
+double pi=acos(-1.);
+
 //param 
 double roi,cci,tpi,chv;
+
+//initl params
+double ct6;
 
 
 
 #define OPS_2D
 #include <ops_seq_v2.h>
 #include "2d_compressible_kernels.h"
+#include "initial_conditions.h"
 #include "utils.h"
 
 
@@ -207,6 +219,7 @@ int main(int argc, const char** argv)
     ops_decl_const("yly", 1, "double", &yly);
     ops_decl_const("CFL", 1, "double", &CFL);
     ops_decl_const("dlx", 1, "double", &dlx);
+    ops_decl_const("dly", 1, "double", &dly);
     ops_decl_const("dx", 1, "double", &dx);
     ops_decl_const("xmu", 1, "double", &xmu);
     ops_decl_const("xkt", 1, "double", &xkt);
@@ -227,8 +240,15 @@ int main(int argc, const char** argv)
     ops_decl_const("y", 1, "double", &y);
     ops_decl_const("dy", 1, "double", &dy);
 
+    //Square cylinder
     ops_decl_const("d", 1, "double", &d);
     ops_decl_const("radius", 1, "double", &radius);
+
+    //initl
+    
+    ops_decl_const("pi", 1, "double", &pi);
+    ops_decl_const("ct6", 1, "double", &ct6);
+
 
     ops_decl_const("roi", 1, "double", &roi);
     ops_decl_const("cci", 1, "double", &cci);
@@ -249,6 +269,7 @@ int main(int argc, const char** argv)
 
     //param(xlx,yly,xmu,xba,gma,chp,roi,cci,d,tpi,chv,uu0);
     double ren, pdl, mach;
+    //FROM PARAMS SUBROUTINE
 
     ren=200.0; //REYNOLDS NUMBER
     mach=0.2; //MACH NUMBER
@@ -267,7 +288,37 @@ int main(int argc, const char** argv)
     xba=xmu*chp/pdl;
     tpi=cci*cci/(chp*(gma-1));
 
-    ops_update_const( "xt", 1, "double", &xt);
+    ops_update_const( "xlx", 1, "double", &xlx);
+    ops_update_const( "yly", 1, "double", &yly);
+    ops_update_const( "roi", 1, "double", &cci);
+    ops_update_const( "d", 1, "double", &d);
+    ops_update_const( "chp", 1, "double", &chp);
+    ops_update_const( "gma", 1, "double", &gma);
+    ops_update_const( "uu0", 1, "double", &uu0);
+    ops_update_const( "xmu", 1, "double", &xmu);
+    ops_update_const( "xba", 1, "double", &xba);
+    ops_update_const( "tpi", 1, "double", &tpi);
+
+    //FROM INITL SUBROUTINE
+    
+    double epsi=0.1;
+    //dlx=xlx/nx
+    //dly=yly/ny
+    double ct3=log(2.);
+    double ct4=yly/2.;
+    double ct5=xlx/2.;
+    double ct6=(gma-1.)/gma;
+    ops_update_const( "ct6", 1, "double", &ct6);
+    double y=-ct4;
+    double x=0.;
+    double eta=0.1;
+    eta=eta/2.;
+    double radius=d/2.;
+    double xkt=xba/(chp*roi);
+    //double pi=acos(-1.);
+
+
+
 
 
     
@@ -275,6 +326,48 @@ int main(int argc, const char** argv)
     ops_par_loop(square_cylinder, "square_cylinder", block, 2, all,
         ops_arg_dat(d_eps,    1, S2D_00, "double", OPS_WRITE),
         ops_arg_idx());
+
+    ops_par_loop(init_condition_uuu, "init_condition_uuu", block, 2, all,
+        ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_WRITE));
+
+    ops_par_loop(init_condition_vvv, "init_condition_vvv", block, 2, all,
+        ops_arg_dat(d_vvv,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_idx());
+    
+    ops_par_loop(init_condition_tmp, "init_condition_tmp", block, 2, all,
+        ops_arg_dat(d_tmp,    1, S2D_00, "double", OPS_WRITE));
+
+    ops_par_loop(init_condition_eee, "init_condition_eee", block, 2, all,
+        ops_arg_dat(d_eee,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_tmp,    1, S2D_00, "double", OPS_READ),
+        ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_READ),
+        ops_arg_dat(d_vvv,    1, S2D_00, "double", OPS_READ));
+
+    ops_par_loop(init_condition_rho, "init_condition_rho", block, 2, all,
+        ops_arg_dat(d_rho,    1, S2D_00, "double", OPS_WRITE));
+
+    ops_par_loop(init_condition_pre, "init_condition_pre", block, 2, all,
+        ops_arg_dat(d_pre,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_rho,    1, S2D_00, "double", OPS_READ),
+        ops_arg_dat(d_tmp,    1, S2D_00, "double", OPS_READ));
+
+    ops_par_loop(init_condition_rou, "init_condition_rou", block, 2, all,
+        ops_arg_dat(d_rou,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_rho,    1, S2D_00, "double", OPS_READ),
+        ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_READ));
+
+    ops_par_loop(init_condition_rov, "init_condition_rov", block, 2, all,
+        ops_arg_dat(d_rov,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_rho,    1, S2D_00, "double", OPS_READ),
+        ops_arg_dat(d_vvv,    1, S2D_00, "double", OPS_READ));
+
+    ops_par_loop(init_condition_roe, "init_condition_roe", block, 2, all,
+        ops_arg_dat(d_roe,    1, S2D_00, "double", OPS_WRITE),
+        ops_arg_dat(d_rho,    1, S2D_00, "double", OPS_READ),
+        ops_arg_dat(d_eee,    1, S2D_00, "double", OPS_READ));
+
+    ops_par_loop(init_condition_scp, "init_condition_scp", block, 2, all,
+        ops_arg_dat(d_scp,    1, S2D_00, "double", OPS_WRITE));
     // Initialisation end
   
 //   printf("T = %s \n", argv[1]);
@@ -523,6 +616,7 @@ int main(int argc, const char** argv)
 //     ops_printf("%lf\n", t);
 //   }
   ops_print_dat_to_txtfile(d_eps, "eps.txt");
+  ops_print_dat_to_txtfile(d_vvv, "vvv.txt");
   //ops_print_dat_to_txtfile(d_v, "v_check.txt");
 
 
