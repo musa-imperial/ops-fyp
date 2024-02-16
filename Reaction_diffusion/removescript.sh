@@ -8,7 +8,6 @@ rm -rf OpenMP_offload
 rm -rf SYCL
 rm -rf .generated
 rm -rf *_ops.cpp
-rm -rf *_ops.c
 rm -rf *.txt
 rm -rf *.txt.*
 
