@@ -1,3 +1,6 @@
+
+#include "global_decl.h"
+
 void set_zero(ACC<double> &A) {
     A(0,0) = 0.0;
 }
