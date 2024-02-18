@@ -176,6 +176,7 @@ end subroutine average
 !############################################
 !
 subroutine derix(phi,nx,ny,dfi,xlx)
+
 !
 !First derivative in the x direction
 !############################################
@@ -381,12 +382,15 @@ subroutine fluxx(uuu,vvv,rho,pre,tmp,rou,rov,roe,nx,ny,tb1,tb2,tb3,&
 
   call derix(rou,nx,ny,tb1,xlx)
   call deriy(rov,nx,ny,tb2,yly)
+
+  !fluxx1
   do j=1,ny
      do i=1,nx
         fro(i,j)=-tb1(i,j)-tb2(i,j)
      enddo
   enddo
 	
+  !fluxx2
   do j=1,ny
      do i=1,nx
         tb1(i,j)=rou(i,j)*uuu(i,j)
@@ -401,6 +405,9 @@ subroutine fluxx(uuu,vvv,rho,pre,tmp,rou,rov,roe,nx,ny,tb1,tb2,tb3,&
   call deryy(uuu,nx,ny,tb7,yly)
   call derix(vvv,nx,ny,tb8,xlx)
   call deriy(tb8,nx,ny,tb9,yly)
+
+  !fluxx3
+  !fluxx4
   utt=1./3
   qtt=4./3
   do j=1,ny
@@ -410,7 +417,8 @@ subroutine fluxx(uuu,vvv,rho,pre,tmp,rou,rov,roe,nx,ny,tb1,tb2,tb3,&
              -(eps(i,j)/eta)*uuu(i,j)
      enddo
   enddo
-		
+
+  !fluxx2
   do j=1,ny
      do i=1,nx
         tb1(i,j)=rou(i,j)*vvv(i,j)
@@ -425,9 +433,12 @@ subroutine fluxx(uuu,vvv,rho,pre,tmp,rou,rov,roe,nx,ny,tb1,tb2,tb3,&
   call deryy(vvv,nx,ny,tb7,yly)
   call derix(uuu,nx,ny,tb8,xlx)
   call deriy(tb8,nx,ny,tb9,yly)
+
+  !fluxx3
+  !fluxx4
   do j=1,ny
      do i=1,nx
-        tbb(i,j)=xmu*(tb6(i,j)+qtt*tb7(i,j)+utt*tb9(i,j))
+        tbb(i,j)=xmu*(qtt*tb7(i,j)+tb6(i,j)+utt*tb9(i,j)) !order of tb7 and qtt*tb6 changed
         frv(i,j)=-tb3(i,j)-tb4(i,j)-tb5(i,j)+tbb(i,j)&
              -(eps(i,j)/eta)*vvv(i,j)
      enddo
