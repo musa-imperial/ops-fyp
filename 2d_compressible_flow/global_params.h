@@ -1,3 +1,4 @@
+//
 extern int nx;
 extern int ny;
 extern int nt;
