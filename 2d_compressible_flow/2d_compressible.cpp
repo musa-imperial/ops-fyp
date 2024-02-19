@@ -78,76 +78,22 @@ int main(int argc, const char** argv)
     ops_decl_const("utt", 1, "double", &utt);
     ops_decl_const("qtt", 1, "double", &qtt);
     
-    // Ranges
 
-    //loop ranges
-
-
-    // Initialisation of the variables
-
-    //param(xlx,yly,xmu,xba,gma,chp,roi,cci,d,tpi,chv,uu0);
-    double ren, pdl, mach;
-    //FROM PARAMS SUBROUTINE
-
-    ren=200.0; //REYNOLDS NUMBER
-    mach=0.2; //MACH NUMBER
-    pdl=0.7;  //PRANDTL NUMBER
-    roi=1.0;
-    cci=1.0;   //SOUND SPEED
-    d=1.0;
-    chp=1.0;
-    gma=1.4;
-        
-    chv=chp/gma;
-    xlx=4.0*d;     //DOMAIN SIZE X DIRECTION
-    yly=4.0*d;     //DOMAIN SIZE Y DIRECTION
-    uu0=mach*cci;
-    xmu=roi*uu0*d/ren;
-    xba=xmu*chp/pdl;
-    tpi=cci*cci/(chp*(gma-1));
-
-    ops_update_const( "xlx", 1, "double", &xlx);
-    ops_update_const( "yly", 1, "double", &yly);
-    ops_update_const( "roi", 1, "double", &cci);
-    ops_update_const( "d", 1, "double", &d);
-    ops_update_const( "chp", 1, "double", &chp);
-    ops_update_const( "gma", 1, "double", &gma);
-    ops_update_const( "uu0", 1, "double", &uu0);
-    ops_update_const( "xmu", 1, "double", &xmu);
-    ops_update_const( "xba", 1, "double", &xba);
-    ops_update_const( "tpi", 1, "double", &tpi);
-
-    //FROM INITL SUBROUTINE
-    
-    double epsi=0.1;
-    //dlx=xlx/nx
-    //dly=yly/ny
-    double ct3=log(2.);
-    double ct4=yly/2.;
-    double ct5=xlx/2.;
-    double ct6=(gma-1.)/gma;
-    ops_update_const( "ct6", 1, "double", &ct6);
-    double y=-ct4;
-    double x=0.;
-    double eta=0.1;
-    eta=eta/2.;
-    double radius=d/2.;
-    double xkt=xba/(chp*roi);
-    //double pi=acos(-1.);
 
     initl();
     
-    // CFL = 0.25;
-    // dlt = CFL*dlx;  //changed from dx to dlx
-    // ops_update_const( "CFL", 1, "double", &CFL);
-    // ops_update_const( "dlt", 1, "double", &dlt);
-    // ops_printf("\nThe time step of the simulation is %lf\n",dlt);
+    CFL = 0.25;
+    dlt = CFL*dlx;  //changed from dx to dlx
+    ops_update_const( "CFL", 1, "double", &CFL);
+    ops_update_const( "dlt", 1, "double", &dlt);
+    ops_printf("\nThe time step of the simulation is %lf\n",dlt);
 
+    int all[] = {-1, nx+1, -1, ny+1};
     // //nxm = nx in original code
-    // ops_par_loop(average, "average", block, 2, all,
-    //     ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_READ),
-    //     ops_arg_reduce(h_um0, 1, "double", OPS_INC));
-    // ops_reduction_result(h_um0, &um0);
+    ops_par_loop(average, "average", block, 2, all,
+        ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_READ),
+        ops_arg_reduce(h_um0, 1, "double", OPS_INC));
+    ops_reduction_result(h_um0, &um0);
 
     // ops_par_loop(average, "average", block, 2, all,
     //     ops_arg_dat(d_vvv,    1, S2D_00, "double", OPS_READ),

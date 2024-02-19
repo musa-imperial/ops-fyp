@@ -13,6 +13,55 @@
 #include "initial_conditions_kernels.h"
 
 void initl() {
+    double ren, pdl, mach;
+    //FROM PARAMS SUBROUTINE
+
+    ren=200.0; //REYNOLDS NUMBER
+    mach=0.2; //MACH NUMBER
+    pdl=0.7;  //PRANDTL NUMBER
+    roi=1.0;
+    cci=1.0;   //SOUND SPEED
+    d=1.0;
+    chp=1.0;
+    gma=1.4;
+        
+    chv=chp/gma;
+    xlx=4.0*d;     //DOMAIN SIZE X DIRECTION
+    yly=4.0*d;     //DOMAIN SIZE Y DIRECTION
+    uu0=mach*cci;
+    xmu=roi*uu0*d/ren;
+    xba=xmu*chp/pdl;
+    tpi=cci*cci/(chp*(gma-1));
+
+    //FROM INITL SUBROUTINE
+    
+    double epsi=0.1;
+    //dlx=xlx/nx
+    //dly=yly/ny
+    double ct3=log(2.);
+    double ct4=yly/2.;
+    double ct5=xlx/2.;
+    double ct6=(gma-1.)/gma;
+    ops_update_const( "ct6", 1, "double", &ct6);
+    double y=-ct4;
+    double x=0.;
+    double eta=0.1;
+    eta=eta/2.;
+    double radius=d/2.;
+    double xkt=xba/(chp*roi);
+    //double pi=acos(-1.);
+
+    ops_update_const( "xlx", 1, "double", &xlx);
+    ops_update_const( "yly", 1, "double", &yly);
+    ops_update_const( "roi", 1, "double", &cci);
+    ops_update_const( "d", 1, "double", &d);
+    ops_update_const( "chp", 1, "double", &chp);
+    ops_update_const( "gma", 1, "double", &gma);
+    ops_update_const( "uu0", 1, "double", &uu0);
+    ops_update_const( "xmu", 1, "double", &xmu);
+    ops_update_const( "xba", 1, "double", &xba);
+    ops_update_const( "tpi", 1, "double", &tpi);
+
     int bottom_left[] = {-1, 0, -1, 0};
 
     int bottom_right[] = {nx, nx+1, -1, 0};
