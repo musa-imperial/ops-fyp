@@ -15,13 +15,13 @@ include $(OPS_INSTALL_PATH)/../makefiles/Makefile.hdf5
 
 
 HEADERS=2d_compressible_kernels.h derivatives.h fluxx.h global_decl.h \
-		   global_ops_vars.h global_params.h
+		   global_ops_vars.h global_params.h initial_conditions_kernels.h
 
-OPS_FILES=2d_compressible.cpp build_datasets.cpp
+OPS_FILES=2d_compressible.cpp
 
-OPS_GENERATED=2d_compressible_ops.cpp build_datasets_ops.cpp
+OPS_GENERATED=2d_compressible_ops.cpp
 
-OTHER_FILES=
+OTHER_FILES=build_datasets.cpp initial_conditions.cpp
 
 
 APP=2d_compressible
