@@ -6,17 +6,19 @@
 
 
 #define OPS_2D
+//#include "ops_seq.h"
 #include <ops_seq_v2.h>
-#include "2d_compressible_kernels.h"
-#include "utils.h"
+#include "global_decl.h"
+//#include "avg_kernel.h"
 #include "derivatives.h"
 
 #include "global_params.h"
 #include "global_ops_vars.h"
-//#include "global_decl.h"
+
 
 void build_datasets();
 void initl();
+void avg_t0();
 
 int main(int argc, const char** argv)
 {
@@ -88,22 +90,32 @@ int main(int argc, const char** argv)
     ops_update_const( "dlt", 1, "double", &dlt);
     ops_printf("\nThe time step of the simulation is %lf\n",dlt);
 
-    int all[] = {-1, nx+1, -1, ny+1};
+    // int all[] = {-1, nx+1, -1, ny+1};
     // //nxm = nx in original code
-    ops_par_loop(average, "average", block, 2, all,
-        ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_READ),
-        ops_arg_reduce(h_um0, 1, "double", OPS_INC));
-    ops_reduction_result(h_um0, &um0);
-
-    // ops_par_loop(average, "average", block, 2, all,
-    //     ops_arg_dat(d_vvv,    1, S2D_00, "double", OPS_READ),
-    //     ops_arg_reduce(h_vm0, 1, "double", OPS_INC));
+    // avg(d_uuu, h_um0);
+    // ops_reduction_result(h_um0, &um0);
+    // avg(d_vvv, h_vm0);
     // ops_reduction_result(h_vm0, &vm0);
+    // avg(d_scp, h_tm0);
+    // ops_reduction_result(h_tm0, &tm0);
+
+    // int all[] = {-1, nx+1, -1, ny+1};
 
     // ops_par_loop(average, "average", block, 2, all,
-    //     ops_arg_dat(d_scp,    1, S2D_00, "double", OPS_READ),
-    //     ops_arg_reduce(h_tm0, 1, "double", OPS_INC));
-    // ops_reduction_result(h_tm0, &tm0);
+    //     ops_arg_dat(d_uuu,    1, S2D_00, "double", OPS_READ),
+    //     ops_arg_reduce(h_um0, 1, "double", OPS_INC));
+    
+    // // ops_par_loop(average, "average", block, 2, all,
+    // //     ops_arg_dat(d_vvv,    1, S2D_00, "double", OPS_READ),
+    // //     ops_arg_reduce(h_vm0, 1, "double", OPS_INC));
+    // // ops_reduction_result(h_vm0, &vm0);
+
+    // // ops_par_loop(average, "average", block, 2, all,
+    // //     ops_arg_dat(d_scp,    1, S2D_00, "double", OPS_READ),
+    // //     ops_arg_reduce(h_tm0, 1, "double", OPS_INC));
+    // // ops_reduction_result(h_tm0, &tm0);
+
+    avg_t0();
 
     // um0 = um0/nx/ny;
     // vm0 = vm0/nx/ny;

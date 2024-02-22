@@ -8,9 +8,10 @@
 #define OPS_2D
 #include "ops_seq_v2.h"
 
+#include "global_params.h"
 #include "global_ops_vars.h"
+#include "initial_conditions_kernel.h"
 
-#include "initial_conditions_kernels.h"
 
 void initl() {
     double ren, pdl, mach;
