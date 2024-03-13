@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
-#include <boost/chrono.hpp>
-#include <boost/program_options.hpp>
+// #include <boost/chrono.hpp>
+// #include <boost/program_options.hpp>
+#include <time.h>
 #include <omp.h>
 
 int main(int argc, const char** argv)
 {
+
   //Size along y
   int jmax = 4094;
   //Size along x
@@ -33,7 +35,8 @@ int main(int argc, const char** argv)
   memset(A, 0, (imax+2) * (jmax+2) * sizeof(double));
 
   // set boundary conditions
-  boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); // start time
+  // boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); // start time
+  clock_t begin = clock();
   for (int i = 0; i < imax+2; i++)
     A[(0)*(imax+2)+i]   = 0.0;
 
@@ -108,13 +111,15 @@ int main(int argc, const char** argv)
     
   }
 }
+  clock_t end = clock();
 
+  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
   printf("%5d, %0.6f\n", iter, error);
 
-  boost::chrono::high_resolution_clock::time_point t2 = boost::chrono::high_resolution_clock::now(); // end time
+  // boost::chrono::high_resolution_clock::time_point t2 = boost::chrono::high_resolution_clock::now(); // end time
 	
-	std::cout << "-- Run-time for TimeIntegrate function: " << 
-			boost::chrono::duration_cast<boost::chrono::milliseconds>(t2-t1) << " ms --\n";
+	std::cout << "-- Run-time: " << 
+			time_spent << " ms --\n";
 
   double err_diff = fabs((100.0*(error/2.421354960840227e-03))-100.0);
   printf("Total error is within %3.15E %% of the expected error\n",err_diff);
