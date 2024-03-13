@@ -26,4 +26,4 @@ OTHER_FILES=
 APP=reaction_diffusion_parallel
 MAIN_SRC=reaction_diffusion_parallel
 
-include $(OPS_INSTALL_PATH)/../makefiles/Makefile.c_app
+include $(OPS_INSTALL_PATH)/../makefiles/Makefile.c_app_legacy
