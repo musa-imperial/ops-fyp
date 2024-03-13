@@ -10,7 +10,8 @@ void copy(ACC<double> &A, const ACC<double> &Anew) {
 
 void u_initcond_stencil(ACC<double> &A, const int *idx) {
 
-    if ((Lx/4 < idx[0] && Lx/4+a < idx[0]) && ((Lx/4 < idx[0] && Lx/4+a < idx[0])) && (Ly/4 < idx[1] && Ly/4+a < idx[1]) && ((Ly/4 < idx[1] && Ly/4+a < idx[1]))) {
+    // if ((Lx/4 < idx[0] && Lx/4+a < idx[0]) && ((Lx/4 < idx[0] && Lx/4+a < idx[0])) && (Ly/4 < idx[1] && Ly/4+a < idx[1]) && ((Ly/4 < idx[1] && Ly/4+a < idx[1]))) {
+    if ((Lx/4 < idx[0] && Lx/4+a < idx[0]) && (Ly/4 < idx[1] && Ly/4+a < idx[1])) {
         A(0, 0) = 1;
     }
     else {

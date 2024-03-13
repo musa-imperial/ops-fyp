@@ -7,8 +7,8 @@
 double dt = 0.001;
 double T = 1;
 //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-int    Nx = 251;
-int    Ny = 251;
+int    Nx = 80;
+int    Ny = 80;
 double nu = 0.75;
 
 double a = 0.1;
@@ -75,6 +75,8 @@ int main(int argc, const char** argv)
   ops_decl_const("Ly",1,"double",&Ly);
   ops_decl_const("h",1,"double",&h);
   ops_decl_const("hnudt",1,"double",&hnudt);
+
+  ops_printf("\nLx = %lf\n",Lx);
 
 
   int s2d_00[] = {0,0};
