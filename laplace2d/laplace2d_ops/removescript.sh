@@ -1,13 +1,14 @@
-rm -rf cuda
-rm -rf hip
-rm -rf mpi_inline
-rm -rf mpi_openmp
-rm -rf openacc
-rm -rf opencl
-rm -rf openmp_offload
-rm -rf sycl
+rm -rf CUDA
+rm -rf HIP
+rm -rf MPI_inline
+rm -rf MPI_OpenMP
+rm -rf OpenACC
+rm -rf OpenCL
+rm -rf OpenMP_offload
+rm -rf SYCL
 rm -rf .generated
 rm -rf *_ops.cpp
+rm -rf *_ops.c
 rm -rf *.txt
 rm -rf *.txt.*
 
