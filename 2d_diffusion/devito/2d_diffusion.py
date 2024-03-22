@@ -5,8 +5,8 @@ import numpy as np
 import time
 
 # Some variable declarations
-nx = 4096
-ny = 4096
+nx = 2048
+ny = 2048
 nt = 400
 nu = .5
 dx = 2. / (nx - 1)
