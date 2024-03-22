@@ -4,7 +4,6 @@
 #include <fstream>
 #include <time.h>
 
-
 #define IDX(I,J) ((J)*Nx + (I))
 
 void printMatrix(const double* array, int rows, int cols, const std::string& filename) {
@@ -35,8 +34,6 @@ int main(int argc, const char** argv)
   int    Npts = Nx*Ny;
   double Lx   = 1.0;
   double Ly   = 1.0;
-  double Re   = 10;
-  double U    = 1.0;
   double nu   = 0.1;
 
   //calculate dx, dy
@@ -141,9 +138,6 @@ int main(int argc, const char** argv)
   double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
   printMatrix(A, Ny, Nx, "output.txt");
-  
-
-  // boost::chrono::high_resolution_clock::time_point t2 = boost::chrono::high_resolution_clock::now(); // end time
 	
 	std::cout << "-- Run-time: " << 
 			time_spent << " ms --\n";
