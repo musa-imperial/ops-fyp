@@ -26,4 +26,4 @@ OTHER_FILES=
 APP=laplace2d
 MAIN_SRC=laplace2d
 
-include $(OPS_INSTALL_PATH)/../makefiles/Makefile.c_app
+include $(OPS_INSTALL_PATH)/../makefiles/Makefile.c_app_legacy
