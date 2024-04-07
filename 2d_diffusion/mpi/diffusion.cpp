@@ -2,14 +2,14 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
-#include <time.h>
 #include <iomanip>
+#include <boost/chrono.hpp>
 #include <mpi.h>
 
 
 #define IDX(I,J) ((J)*(Nx+2) + (I))
 
-void printMatrix(const double* array, int rows, int cols, int interior_range_idx[], const std::string& filename) {
+void printMatrix(const double* array, int rows, int cols, int range_idx[], const std::string& filename) {
     std::ofstream outFile(filename);
     if (!outFile) {
         std::cerr << "Error: Couldn't open the file " << filename << std::endl;
@@ -18,9 +18,9 @@ void printMatrix(const double* array, int rows, int cols, int interior_range_idx
 
     outFile << std::setprecision(5) << std::fixed;
 
-    for(int j = interior_range_idx[3]; j > interior_range_idx[2]-1; j--)
+    for(int j = range_idx[3]; j > range_idx[2]-1; j--)
     {
-      for(int i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
+      for(int i = range_idx[0]; i <range_idx[1]+1; i++)
       {
         outFile << array[j * cols + i] << " ";
       }
@@ -86,50 +86,50 @@ int main(int argc, char **argv)
   int x = coord[0];
   int y = coord[1];
 
-  // if (leftId < 0) {
-  //   leftId = MPI_PROC_NULL;
-  // }
-  // if (rightId < 0) {
-  //   leftId = MPI_PROC_NULL;
-  // }
-  // if (upId < 0) {
-  //   leftId = MPI_PROC_NULL;
-  // }
-  // if (downId < 0) {
-  //   leftId = MPI_PROC_NULL;
-  // }
-
-  //std::cout << "leftId" << ", " << "rightId" << ", " << "downId" << ", " << "upId" << std::endl;
-  //std::cout << leftId << ", " << rightId << ", " << downId << ", " << upId << std::endl;
-
-
   double t;
-  double dt   = 0.01;
+  double dt   = 0.001;
   double T    = 1;
-  double dx;
-  double dy;
-  int    Global_Nx   = 100;
-  int    Global_Ny   = 100;
+  int    Global_Nx   = 4000;
+  int    Global_Ny   = 4000;
+
+  double u;
+  double error = 0;
+  double error_global = 0; 
+  double max_error = 0;
+  double max_error_global = 0;
 
   int Nx, Ny;
 
   Nx = Global_Nx/blocks_x;
   Ny = Global_Ny/blocks_y;
-  //set_local_N(Nx, Global_Nx, blocks_x, rank);
-  //set_local_N(Ny, Global_Ny, blocks_y, rank);
 
   std::cout << "Rank: " << rank << " Nx: " << Nx <<" Ny: "<< Ny << std::endl;
 
   int    Npts = (Nx+2)*(Ny+2);
-  double Lx   = 1.0;
-  double Ly   = 1.0;
+
   double nu   = 0.1;
 
   //calculate dx, dy
-  dx = Lx / (Global_Nx-1);
-  dy = Ly / (Global_Ny-1);
+  double dx = 1;
+  double dy = 1;
+  double Lx   = dx*(Global_Nx-1);
+  double Ly   = dy*(Global_Ny-1);
 
-  double hnudt = nu*dt/dx;
+  // double Lx = 1;
+  // double Ly = 1;
+  // double dx = Lx / (Global_Nx-1);
+  // double dy = Ly / (Global_Ny-1);
+
+  try {
+        if (dt > dx/4 || dt > dy/4) {
+            if (rank == 0)
+                throw std::runtime_error("dt > h/4");
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+  double hnudt = nu*dt/dx/dx;
 
 
   int i, j;
@@ -143,67 +143,63 @@ int main(int argc, char **argv)
   A   = new double[Npts];
   Anew   = new double[Npts];
   
-  // = 2;
-  //std::cout << A[-1] << std::endl;
-  //std::cout << A[Npts] << std::endl;
   // set boundary conditions
-  clock_t begin = clock();
+  boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); 
 
   
   double x_corner = Global_Nx/dims[0]*coord[0]*dx; // Fix this for non equal distribution of grid points
   double y_corner = Global_Nx/dims[1]*coord[1]*dy;
 
-  //std::cout << "x_corner" << ", " << "y_corner" << std::endl;
-  //std::cout << x_corner << ", " << y_corner << std::endl;
-
   // {left, right, bottom, top}
   int interior_range_idx[4] = {1, Nx, 1, Ny}; //for non boundary process
+  int domain_range_idx[4] = {1, Nx, 1, Ny};
+
+  int shift = 1;
 
   //only for boundary processes 
   if (leftId == MPI_PROC_NULL) {
-    interior_range_idx[0]+=2; 
-    //std::cout << "True check" << std::endl;
+    interior_range_idx[0]+=shift; 
   }
 
   if (rightId == MPI_PROC_NULL) {
-    interior_range_idx[1]-=2; 
+    interior_range_idx[1]-=shift; 
   }
 
   if (downId == MPI_PROC_NULL) {
-    interior_range_idx[2]+=2; 
+    interior_range_idx[2]+=shift; 
   }
 
   if (upId == MPI_PROC_NULL) {
-    interior_range_idx[3]-=2; 
+    interior_range_idx[3]-=shift; 
   }
 
 
   if (coord[1] == 0) {
   //bottom
-  for (i = 1; i < Nx; i++)
-    A[IDX(i,1)]   = 0; //replace 1 with boundary interior ranges
-    Anew[IDX(1,j)] = 0;
+  for (int i = interior_range_idx[0]-1; i < interior_range_idx[1]+2; ++i)
+    A[IDX(i,interior_range_idx[2])]   = 0; //replace 1 with boundary interior ranges
+    Anew[IDX(i,interior_range_idx[2])] = 0;
   }
 
   if (coord[1] == blocks_y-1) {
   //top
-  for (i = 1; i < Nx; i++)
-    A[IDX(i,Ny-1)] = 0;
-    Anew[IDX(i,Ny-1)] = 0;
+  for (int i = interior_range_idx[0]-1; i < interior_range_idx[1]+2; ++i)
+    A[IDX(i,interior_range_idx[3])] = 0;
+    Anew[IDX(i,interior_range_idx[3])] = 0;
   }
   
   if (coord[0] == 0) {
   //left
-  for (j = 1; j < Ny; j++)
-    A[IDX(1,j)] = 0;//sin(pi * j / (Ny-1));
-    Anew[IDX(1,j)] = 0;
+  for (int j = interior_range_idx[2]-1; j < interior_range_idx[3]+2; ++j)
+    A[IDX(interior_range_idx[0],j)] = 0;//sin(pi * j / (Ny-1));
+    Anew[IDX(interior_range_idx[0],j)] = 0;
 }
 
   if (coord[0] == blocks_x-1) {
   //right
-  for (j = 1; j < Ny; j++)
-    A[IDX(Nx-1,j)] = 0;//sin(pi * j / (Ny-1))*exp(-pi);
-    Anew[IDX(Nx-1,j)] = 0;
+  for (int j = interior_range_idx[2]-1; j < interior_range_idx[3]+2; ++j)
+    A[IDX(interior_range_idx[1],j)] = 0;//sin(pi * j / (Ny-1))*exp(-pi);
+    Anew[IDX(interior_range_idx[1],j)] = 0;
 }
 
 
@@ -214,22 +210,14 @@ int main(int argc, char **argv)
     {
       for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
       {
-        A[IDX(i,j)] = 5*sin(pi*(x_corner+dx*i)/Lx)*sin(pi*(y_corner+dy*j)/Ly);
+        A[IDX(i,j)] = 5*sin(pi*(x_corner+dx*(i-1))/Lx)*sin(pi*(y_corner+dy*(j-1))/Ly);
         
-        Anew[IDX(i,j)] = 5*sin(pi*(x_corner+dx*i)/Lx)*sin(pi*(y_corner+dy*j)/Ly);
+        Anew[IDX(i,j)] = 5*sin(pi*(x_corner+dx*(i-1))/Lx)*sin(pi*(y_corner+dy*(j-1))/Ly);
         
       }
     }
 
-  printMatrix(A, Ny+2, Nx+2, interior_range_idx, "initial_condition.txt");
-
-  
-
-  // for (j = 0; j < Nx; j++)
-  // {
-  //   Anew[IDX(Nx-1,j)] = sin(pi * j / (Ny-1))*exp(-pi);
-  // }
-  
+  printMatrix(A, Ny+2, Nx+2, domain_range_idx, "initial_condition.txt");
 
   for (t = 0; t < T; t+=dt)
   {
@@ -312,7 +300,7 @@ int main(int argc, char **argv)
     {
         //rcv from up
 
-        std::cout << "rank: " <<rank << " " << interior_range_idx[0] << ", "<< interior_range_idx[3] << std::endl;
+        //std::cout << "rank: " <<rank << " " << interior_range_idx[0] << ", "<< interior_range_idx[3] << std::endl;
         MPI_Recv(&A[IDX(interior_range_idx[0], interior_range_idx[3]+1)], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, upId, tag, MPI_COMM_WORLD, &status);
         
     }
@@ -337,18 +325,39 @@ int main(int argc, char **argv)
       }
     }
 
-    //MPI_Barrier(MPI_COMM_WORLD);    
     
+    //   
+    //end of time integration loop 
   }
 
-  clock_t end = clock();
+  
+  for( j = interior_range_idx[2]; j < interior_range_idx[3]+1; j++ )
+    {
+      for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
+      {
+        u = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(x_corner+dx*(i-1)))*sin(pi/Ly*(y_corner+dy*(j-1)));
 
-  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        error = error + sqrt(abs(A[IDX(i,j)]*A[IDX(i,j)]-u*u));
+        max_error = fmax(max_error, fabs((A[IDX(i,j)]-u)/u));
+
+        //std::cout << x_corner+dx*(i-1) << ", "<< y_corner+dy*(j-1) << ", " << (A[IDX(i,j)]) << ", " << u << ", " << fabs((A[IDX(i,j)]-u))/u << std::endl;
+      }
+    }
+    MPI_Allreduce(&error, &error_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&max_error, &max_error_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD); 
+    if (rank==0) std::cout << "L2 error: " << error_global << std::endl;
+    if (rank==0) std::cout << "Max percentage error: " << max_error_global*100 << "%" <<  std::endl;
+    
+  boost::chrono::high_resolution_clock::time_point t2 = boost::chrono::high_resolution_clock::now();
+
+  boost::chrono::milliseconds time_spent = boost::chrono::duration_cast<boost::chrono::milliseconds>(t2-t1);
 
   std::string filename = "output" + std::to_string(rank) + ".txt";
-  printMatrix(A, Ny+2, Nx+2, interior_range_idx ,filename);
+  printMatrix(A, Ny+2, Nx+2, domain_range_idx ,filename);
 
-	std::cout << "-- Run-time: " << 
+	if (rank==0) std::cout << "-- Run-time: " << 
 			time_spent << " ms --\n";
 
 
