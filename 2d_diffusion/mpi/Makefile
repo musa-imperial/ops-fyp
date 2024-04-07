@@ -2,7 +2,7 @@ CC       = mpicxx
 OMPFLAGS = -O3 -lm
 
 BIN =  diffusion
-LIBS = 
+LIBS = -lboost_chrono
 
 all: $(BIN)
 
