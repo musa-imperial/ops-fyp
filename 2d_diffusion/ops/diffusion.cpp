@@ -6,16 +6,22 @@
 
 double dt = 0.001;
 double T = 1;
-//printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
-int    Nx = 80;
-int    Ny = 80;
-double nu = 0.75;
+int    Nx = 40-2;
+int    Ny = 40-2;
+double nu = 0.1;
 
 double a = 0.1;
+
 double dx = 1.0;
 double dy = 1.0;
-double Lx = dx*(Nx-1);
-double Ly = dy*(Ny-1);
+double Lx = dx*(Nx+2-1);
+double Ly = dy*(Ny+2-1);
+
+// double Lx = 1;
+// double Ly = 1;
+// double dx = Lx / (Nx+2-1);
+// double dy = Ly / (Ny+2-1);
+
 double h = dx;
 
 double hnudt=nu/h/h*dt;
@@ -33,14 +39,14 @@ int main(int argc, const char** argv)
 	//int prog = 0;
 	
 	// Precomputing end index of the grid array
-  //printf("\n-- Solving the problem up to time T = %.2f with a time-step (dt) of %.2f and spacial step (h) of %d --\n", T, dt, 1);
 	
   double *u = NULL;
   double *u_calc= NULL;
-  double *v= NULL;
-  double *v_calc= NULL;
 
   double ct0, ct1, et0, et1;
+
+  double l2error = 0;
+  double max_error = 0;
   
 //   printf("T = %s \n", argv[1]);
 //   double T = atof(argv[1]);
@@ -82,38 +88,14 @@ int main(int argc, const char** argv)
   int s2d_00[] = {0,0};
   ops_stencil S2D_00 = ops_decl_stencil(2,1,s2d_00,"0,0");
 
-  //corner bc stencils
-  //point x = 0,  y = 0 stencil (bottom_left)
-  int s2d_bottom_left[] = {0,0,   1,0,  0,1};
-  ops_stencil S2D_BOTTOM_LEFT = ops_decl_stencil(2,3,s2d_bottom_left,"bottom_left");
-
-  //point x = 0,  y = Ny-1 stencil (top_left)
-  int s2d_top_left[] = {0,0,  1,0, 0,-1};
-  ops_stencil S2D_TOP_LEFT = ops_decl_stencil(2,3,s2d_top_left,"top_left");
-
-  //point x = Nx-1, y = 0 stencil (bottom_right)
-  int s2d_bottom_right[] = {0,0,  -1,0, 0,1};
-  ops_stencil S2D_BOTTOM_RIGHT = ops_decl_stencil(2,3,s2d_bottom_right,"bottom_right");
-
-  //point x = Nx-1, y = Ny-1 stencil (top_right)
-  int s2d_top_right[] = {0,0, -1,0,  0,-1};
-  ops_stencil S2D_TOP_RIGHT = ops_decl_stencil(2,3,s2d_top_right,"top_right");
-
-  //bc stencils
-  int s2d_left[] = {0,0, 1,0, 0,1, 0,-1};
-  ops_stencil S2D_LEFT = ops_decl_stencil(2,4,s2d_left,"left");
-
-  int s2d_right[] = {0,0, -1,0, 0,1, 0,-1};
-  ops_stencil S2D_RIGHT = ops_decl_stencil(2,4,s2d_right,"right");
-
-  int s2d_top[] = {0,0, 1,0, -1,0, 0,-1};
-  ops_stencil S2D_TOP = ops_decl_stencil(2,4,s2d_top,"top");
-
-  int s2d_bottom[] = {0,0, 1,0, -1,0, 0,1};
-  ops_stencil S2D_BOTTOM = ops_decl_stencil(2,4,s2d_bottom,"bottom");
-
   int s2d_interior[] = {0,0, 1,0, -1,0, 0,1, 0,-1};
   ops_stencil S2D_INTERIOR = ops_decl_stencil(2,5,s2d_interior,"interior");
+
+  //reduction_handle
+  ops_reduction h_l2err = ops_decl_reduction_handle(sizeof(double), "double", "l2error");  
+
+  
+  ops_reduction h_maxerr = ops_decl_reduction_handle(sizeof(double), "double", "max_error"); 
 
 
   ops_partition("");
@@ -121,21 +103,6 @@ int main(int argc, const char** argv)
 
   
   //loop ranges
-  int bottom_left[] = {-1, 0, -1, 0};
-
-  int bottom_right[] = {Nx, Nx+1, -1, 0};
-
-  int top_left[] = {-1, 0, Ny, Ny+1};
-
-  int top_right[] = {Nx, Nx+1, Ny, Ny+1};
-
-  int bottom[] = {0, Nx, -1, 0};
-
-  int top[] = {0, Nx, Ny, Ny+1};
-
-  int left[] = {-1, 0, 0, Ny};
-
-  int right[] = {Nx, Nx+1, 0, Ny};
 
   int interior[] = {0, Nx, 0, Ny};
 
@@ -144,7 +111,7 @@ int main(int argc, const char** argv)
   ops_timers(&ct0, &et0);
   //int all[] = {0, Nx, 0, Ny};
 
-  ops_par_loop(set_zero, "set_zero", block, 2, bottom,
+  ops_par_loop(set_zero, "set_zero", block, 2, all,
       ops_arg_dat(d_u, 1, S2D_00, "double", OPS_WRITE));
 
   ops_par_loop(set_zero, "set_zero", block, 2, all,
@@ -152,54 +119,17 @@ int main(int argc, const char** argv)
 
 
   //set initial condition
-  ops_par_loop(u_initcond_stencil, "u_initcond_stencil", block, 2, all,
+  ops_par_loop(initial_condition, "initial_condition", block, 2, all,
         ops_arg_dat(d_u,    1, S2D_00, "double", OPS_WRITE),
         ops_arg_idx());
 
 
   for (double t = 0.0; t < T; t += dt) {
 
-    //  Corner boundary conditions
-    ops_par_loop(bottomleft_u, "bottomleft_u", block, 2, bottom_left,
-        ops_arg_dat(d_u,    1,   S2D_BOTTOM_LEFT, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-    ops_par_loop(topleft_u, "topleft_u", block, 2, top_left,
-        ops_arg_dat(d_u,    1,   S2D_TOP_LEFT, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-
-    ops_par_loop(bottomright_u, "bottomright_u", block, 2, bottom_right,
-        ops_arg_dat(d_u,    1,   S2D_BOTTOM_RIGHT, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-    ops_par_loop(topright_u, "topright_u", block, 2, top_right,
-        ops_arg_dat(d_u,    1,   S2D_TOP_RIGHT, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-    //
-
-    ops_par_loop(left_bndcon_u, "left_bndcon_u", block, 2, left,
-        ops_arg_dat(d_u,    1,   S2D_LEFT, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-    ops_par_loop(right_bndcon_u, "right_bndcon_u", block, 2, right,
-        ops_arg_dat(d_u,    1,   S2D_RIGHT, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-    ///
-    ops_par_loop(top_bndcon_u, "top_bndcon_u", block, 2, top,
-        ops_arg_dat(d_u,    1,   S2D_TOP, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
-    ops_par_loop(bottom_bndcon_u, "bottom_bndcon_u", block, 2, bottom,
-        ops_arg_dat(d_u,    1,   S2D_BOTTOM, "double", OPS_READ),
-        ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
 
     ops_par_loop(interior_stencil_u, "interior_stencil_u", block, 2, interior,
         ops_arg_dat(d_u,    1,   S2D_INTERIOR, "double", OPS_READ),
         ops_arg_dat(d_u_calc, 1, S2D_00, "double", OPS_WRITE));
-
 
     ops_par_loop(copy, "copy", block, 2, all,
         ops_arg_dat(d_u,    1, S2D_00, "double", OPS_WRITE),
@@ -207,7 +137,21 @@ int main(int argc, const char** argv)
     
 
   }
+
+    ops_par_loop(solution_check, "solution_check", block, 2, interior,
+        ops_arg_dat(d_u,    1, S2D_00, "double", OPS_READ),
+        ops_arg_idx(),
+        ops_arg_reduce(h_l2err, 1, "double", OPS_INC),
+        ops_arg_reduce(h_maxerr, 1, "double", OPS_MAX));
+
+    ops_reduction_result(h_l2err, &l2error);
+    ops_reduction_result(h_maxerr, &max_error);
+
+
   ops_print_dat_to_txtfile(d_u, "u_check.txt");
+
+  ops_printf("L2 Error: %0.6f\n", l2error); 
+  ops_printf("Max percentage Error: %0.6e\n", max_error*100); 
 
   
   ops_timers(&ct1, &et1);
@@ -216,8 +160,6 @@ int main(int argc, const char** argv)
   ops_printf("\nTotal Wall time %lf\n",et1-et0);
 
   //Finalising the OPS library
-
-  //ops_printf("%lf", u[0]);
   
   ops_exit();
   free(u);
