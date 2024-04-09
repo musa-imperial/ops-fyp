@@ -89,8 +89,8 @@ int main(int argc, char **argv)
   double t;
   double dt   = 0.001;
   double T    = 1;
-  int    Global_Nx   = 4000;
-  int    Global_Ny   = 4000;
+  int    Global_Nx   = 40;
+  int    Global_Ny   = 40;
 
   double u;
   double error = 0;
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
       }
     }
     
-    if (rank==0) std::cout << "Entered fd loop " << std::endl;
+    
     for( j = interior_range_idx[2]; j < interior_range_idx[3]+1; j++ )
     {
       for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
