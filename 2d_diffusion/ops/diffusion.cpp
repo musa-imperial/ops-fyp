@@ -156,7 +156,7 @@ int main(int argc, const char** argv)
   //ops_printf("L2 Error: %0.6f\n", l2error); 
   //ops_printf("Max percentage Error: %0.6e\n", max_error*100); 
 
-  ops_printf("\n%lf %lf %lf",et1-et0, l2error, max_error*100);
+  ops_printf("\n%lf %le",et1-et0, max_error*100);
 
   //Finalising the OPS library
   

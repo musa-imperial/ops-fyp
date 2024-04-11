@@ -1,13 +1,13 @@
 #!/bin/bash
 
-max_thread_count=16
+max_thread_count=48
 max_core_count=4
 
 compiler="gnu"
 
-parallel="mpi"
+parallel="openmp"
 
-export OPS_INSTALL_PATH=/home/musa/apps/OPS/ops
+export OPS_INSTALL_PATH=/home/mmc19/apps/OPS/ops
 
 if [ "$compiler" = "icx" ]; then
     export OPS_COMPILER=icx
@@ -38,7 +38,7 @@ fi
 make diffusion_seq
 
 if [ "$parallel" = "openmp" ]; then
-    echo -n " Runtime, L2, Max, Thread count" > benchmark_output.txt
+    echo -n " Runtime, Max, Thread count" > benchmark_output.txt
     for (( t=1; t<=$max_thread_count; t++ )); do
         export OMP_NUM_THREADS=$t
         pi=$(./diffusion_seq)
@@ -58,7 +58,7 @@ elif [ "$parallel" = "mpi" ]; then
         done 
         echo -n "$pi, $t" >> benchmark_output.txt
         echo -n >> benchmark_output.txt
-        echo "Runtime, L2, Max"
+        echo "Runtime, Max"
         echo "$pi"
         echo "Core count: $t"
     done
