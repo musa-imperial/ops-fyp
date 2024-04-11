@@ -82,7 +82,7 @@ int main(int argc, const char** argv)
   ops_decl_const("h",1,"double",&h);
   ops_decl_const("hnudt",1,"double",&hnudt);
 
-  ops_printf("\nLx = %lf\n",Lx);
+  //ops_printf("\nLx = %lf\n",Lx);
 
 
   int s2d_00[] = {0,0};
@@ -138,6 +138,9 @@ int main(int argc, const char** argv)
 
   }
 
+  ops_timers(&ct1, &et1);
+  ops_timing_output(std::cout);
+
     ops_par_loop(solution_check, "solution_check", block, 2, interior,
         ops_arg_dat(d_u,    1, S2D_00, "double", OPS_READ),
         ops_arg_idx(),
@@ -150,14 +153,10 @@ int main(int argc, const char** argv)
 
   ops_print_dat_to_txtfile(d_u, "u_check.txt");
 
-  ops_printf("L2 Error: %0.6f\n", l2error); 
-  ops_printf("Max percentage Error: %0.6e\n", max_error*100); 
+  //ops_printf("L2 Error: %0.6f\n", l2error); 
+  //ops_printf("Max percentage Error: %0.6e\n", max_error*100); 
 
-  
-  ops_timers(&ct1, &et1);
-  ops_timing_output(std::cout);
-
-  ops_printf("\nTotal Wall time %lf\n",et1-et0);
+  ops_printf("\n%lf %lf %lf",et1-et0, l2error, max_error*100);
 
   //Finalising the OPS library
   
