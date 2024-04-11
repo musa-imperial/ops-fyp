@@ -42,7 +42,7 @@ if [ "$parallel" = "openmp" ]; then
     for (( t=1; t<=$max_thread_count; t++ )); do
         export OMP_NUM_THREADS=$t
         pi=$(./diffusion_seq)
-        echo -n "$pi, $t" >> benchmark_output.txt
+        echo -n "$pi $t" >> benchmark_output.txt
         echo -n >> benchmark_output.txt
         echo "Runtime, Max"
         echo "$pi"
@@ -56,7 +56,7 @@ elif [ "$parallel" = "mpi" ]; then
         for (( s=$t; s>=2; s-- )); do
             pi=$(sed '$d' <<< "$pi")
         done 
-        echo -n "$pi, $t" >> benchmark_output.txt
+        echo -n "$pi $t" >> benchmark_output.txt
         echo -n >> benchmark_output.txt
         echo "Runtime, Max"
         echo "$pi"
