@@ -7,7 +7,7 @@ compiler="gnu"
 
 parallel="openmp"
 
-export OPS_INSTALL_PATH=/home/mmc19/apps/OPS/ops
+export OPS_INSTALL_PATH=/home/musa/apps/OPS/ops
 
 if [ "$compiler" = "icx" ]; then
     export OPS_COMPILER=icx
@@ -44,12 +44,12 @@ if [ "$parallel" = "openmp" ]; then
         pi=$(./diffusion_seq)
         echo -n "$pi, $t" >> benchmark_output.txt
         echo -n >> benchmark_output.txt
-        echo "Runtime, L2, Max"
+        echo "Runtime, Max"
         echo "$pi"
         echo "Thread count: $t"
     done
 elif [ "$parallel" = "mpi" ]; then
-    echo -n " Runtime, L2, Max, Core count" > benchmark_output.txt
+    echo -n " Runtime, Max, Core count" > benchmark_output.txt
     for (( t=1; t<=$max_core_count; t++ )); do
         export OMP_NUM_THREADS=1
         pi=$(mpiexec -np $t ./diffusion_seq)
