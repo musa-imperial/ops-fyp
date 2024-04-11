@@ -2,7 +2,7 @@ CC       = g++
 OMPFLAGS = -Ofast -lm
 
 BIN =  diffusion
-LIBS = 
+LIBS = -lboost_chrono
 
 all: $(BIN)
 

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
-#include <time.h>
+#include <boost/chrono.hpp>
 
 #define IDX(I,J) ((J)*Nx + (I))
 
@@ -56,7 +56,7 @@ int main(int argc, const char** argv)
   
 
   // set boundary conditions
-  // boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); // start time
+  boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); // start time
   clock_t begin = clock();
   for (i = 0; i < Nx; i++)
     A[IDX(i,0)]   = 0;
@@ -133,14 +133,14 @@ int main(int argc, const char** argv)
     
   }
 
-  clock_t end = clock();
+  boost::chrono::high_resolution_clock::time_point t2 = boost::chrono::high_resolution_clock::now();
 
-  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  boost::chrono::milliseconds time_spent = boost::chrono::duration_cast<boost::chrono::milliseconds>(t2-t1);
 
   printMatrix(A, Ny, Nx, "output.txt");
 	
 	std::cout << "-- Run-time: " << 
-			time_spent << " ms --\n";
+			time_spent.count() << " ms --\n";
 
 
   delete[] A;
