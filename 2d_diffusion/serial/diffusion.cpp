@@ -48,7 +48,7 @@ int main(int argc, const char** argv)
   dx = Lx / (Nx-1);
   dy = Ly / (Ny-1);
 
-  double hnudt = nu*dt/dx;
+  double hnudt = nu*dt/dx/dx;
 
 
   int i, j;
@@ -154,7 +154,7 @@ int main(int argc, const char** argv)
         error = error + sqrt(abs(A[IDX(i,j)]*A[IDX(i,j)]-u*u));
         max_error = fmax(max_error, fabs((A[IDX(i,j)]-u)/u));
 
-        std::cout << dx*(i) << ", "<< dy*(j) << ", " << (A[IDX(i,j)]) << ", " << u << ", " << fabs((A[IDX(i,j)]-u))/u << std::endl;
+        //std::cout << dx*(i) << ", "<< dy*(j) << ", " << (A[IDX(i,j)]) << ", " << u << ", " << fabs((A[IDX(i,j)]-u))/u << std::endl;
       }
     }
 
