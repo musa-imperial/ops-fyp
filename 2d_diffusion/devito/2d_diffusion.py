@@ -1,76 +1,75 @@
-from examples.cfd import plot_field, init_hat
-from examples.performance import unidiff_output, print_kernel
+#NBVAL_IGNORE_OUTPUT
+from devito import Grid, TimeFunction, Eq, solve, configuration, Operator, Constant, Eq, solve, mmax
+from sympy.abc import a
+from sympy import simplify, sin
 import numpy as np
-#%matplotlib inline
 import time
+from math import pi, exp
+
+configuration['safe-math'] = 1
 
 # Some variable declarations
-nx = 2048
-ny = 2048
-nt = 400
-nu = .5
-dx = 2. / (nx - 1)
-dy = 2. / (ny - 1)
-sigma = .25
-dt = sigma * dx * dy / nu
+Nx = 4000
+Ny = 4000
+T = 1.0
+nt = 1000
+dt = 0.001
+nu = 0.1
 
-
-from devito import Grid, TimeFunction, Eq, solve
-from sympy.abc import a
-from sympy import nsimplify
+dx = 1.0
+dy = 1.0
+Lx = dx*(Nx-1)
+Ly = dy*(Ny-1)
 
 # Initialize `u` for space order 2
-grid = Grid(shape=(nx, ny), extent=(2., 2.))
+grid = Grid(shape=(Nx, Ny), extent=(Lx, Ly), dtype = np.float64)
 u = TimeFunction(name='u', grid=grid, space_order=2)
 
-eq = Eq(u.dt, a * u.laplace)
-stencil = solve(eq, u.forward)
-eq_stencil = Eq(u.forward, stencil)
-
-eq_stencil
-
-#NBVAL_IGNORE_OUTPUT
-from devito import Operator, Constant, Eq, solve
-
-# Reset our data field and ICs
-init_hat(field=u.data[0], dx=dx, dy=dy, value=1.)
-
-# Field initialization
-u.data[0][ nx//4:nx//4+10 , ny//4:ny//4+10 ] = 2
-u.data[0][ 3*nx//4:3*nx//4+10 , ny//4:ny//4+10 ] = 3
-u.data[0][ nx//4:nx//4+10 , 3*ny//4:3*ny//4+10 ] = 4
-u.data[0][ 3*ny//4:3*ny//4+10 , 3*ny//4:3*ny//4+10 ] = 5
+#initial condition
+x, y = grid.dimensions
+init_eq = Eq(u, 5*sin(pi*(x)/Lx)*sin(pi*(y)/Ly), subdomain=grid.interior)
+init_eq
+init_op = Operator(init_eq, opt='noop')
+init_op(time=1)
+#print(u.data[0])
 
 
-# Create an operator with second-order derivatives
+## Create an operator with second-order derivatives
 a = Constant(name='a')
 eq = Eq(u.dt, a * u.laplace, subdomain=grid.interior)
 stencil = solve(eq, u.forward)
 eq_stencil = Eq(u.forward, stencil)
 
 # Create boundary condition expressions
-x, y = grid.dimensions
 t = grid.stepping_dim
-bc = [Eq(u[t+1, 0, y], 1.)]  # left
-bc += [Eq(u[t+1, nx-1, y], 1.)]  # right
-bc += [Eq(u[t+1, x, ny-1], 1.)]  # top
-bc += [Eq(u[t+1, x, 0], 1.)]  # bottom
 
-op = Operator([eq_stencil] + bc, opt=('advanced', {'openmp': True}))
+bc = [Eq(u[t+1, 0, y], 0.)]  # left
+bc += [Eq(u[t+1, Nx-1, y], 0.)]  # right
+bc += [Eq(u[t+1, x, Ny-1], 0.)]  # top
+bc += [Eq(u[t+1, x, 0], 0.)]  # bottom
 
-#op = Operator([eq_stencil] + bc, opt=('advanced-fsg'))
+#main finite difference operator
+#op = Operator([eq_stencil]+bc, platform='nvidiaX', opt=('advanced', {'gpu-fit': u}))
+op = Operator([eq_stencil]+bc, opt=('advanced', {'openmp': True}))
 
-#op0_b0_omp = Operator(eq, opt=('noop', {'openmp': True, 'par-dynamic-work': 100}))
-#print_kernel(op)
-
-
-#op = Operator([eq_stencil] + bc)
-#op.apply(autotune=True)
 start_time = time.time() 
 
-op(time=2*nt, dt=dt, a=nu)
+op(time=nt, dt=dt, a=nu)
+
 end_time = time.time()
 
 elapsed_time = end_time - start_time
 
 print(f"Runtime: {elapsed_time} seconds")
+
+#Solution checking
+u_analytical = TimeFunction(name='u_analytical', grid=grid, space_order=2, dtype=np.float64)
+error_field = TimeFunction(name='error_field', grid=grid, space_order=2, dtype=np.float64)
+u_analytical = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*nt*dt)*sin(pi/Lx*x)*sin(pi/Ly*y)
+
+error_eq = Eq(error_field, abs((u_analytical-u)/u_analytical), subdomain=grid.interior)
+
+check_op = Operator(error_eq, opt='noop')
+check_op(time=1)
+print(mmax(error_field))
+
