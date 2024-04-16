@@ -1,3 +1,4 @@
 /Reaction_diffusion/data_analysis/
 *.ipynb
+!03_diffusion.ipynb
 
