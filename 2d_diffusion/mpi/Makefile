@@ -1,8 +1,8 @@
 CC       = mpicxx
-OMPFLAGS = -O3 -lm -fopenmp
+OMPFLAGS = -O3 -fopenmp 
 
 BIN =  diffusion
-LIBS = -lboost_chrono
+LIBS = -lboost_chrono -lm 
 
 all: $(BIN)
 
