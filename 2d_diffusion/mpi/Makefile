@@ -1,5 +1,5 @@
 CC       = mpicxx
-OMPFLAGS = -O3 -lm
+OMPFLAGS = -O3 -lm -fopenmp
 
 BIN =  diffusion
 LIBS = -lboost_chrono
