@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/chrono.hpp>
+#include <omp.h>
 
 #define IDX(I,J) ((J)*Nx + (I))
 
@@ -26,21 +27,29 @@ int main(int argc, const char** argv)
 {
   double t;
   double dt   = 0.01;
-  double T    = 100.0;
-  double dx;
-  double dy;
-  int    Nx   = 100;
-  int    Ny   = 100;
+  double T    = 1.0;
+  
+  int    Nx   = 200;
+  int    Ny   = 200;
   int    Npts = Nx*Ny;
-  double Lx   = 1.0;
-  double Ly   = 1.0;
+
+  double dx = 1;
+  double dy = 1;
+  double Lx   = dx*(Nx-1);
+  double Ly   = dy*(Ny-1);
+
+  // double Lx = 1;
+  // double Ly = 1;
+  // double dx = Lx / (Nx-1);
+  // double dy = Ly / (Ny-1);
+
   double nu   = 0.1;
 
   //calculate dx, dy
   dx = Lx / (Nx-1);
   dy = Ly / (Ny-1);
 
-  double hnudt = nu*dt/dx;
+  double hnudt = nu*dt/dx/dx;
 
 
   int i, j;
@@ -49,6 +58,10 @@ int main(int argc, const char** argv)
 
   double *A = nullptr;
   double *Anew = nullptr;
+
+  double u, error, max_error;
+  error = 0;
+  max_error = 0;
   
 
   A   = new double[Npts];
@@ -57,7 +70,7 @@ int main(int argc, const char** argv)
 
   // set boundary conditions
   boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); // start time
-  clock_t begin = clock();
+  
   for (i = 0; i < Nx; i++)
     A[IDX(i,0)]   = 0;
 
@@ -111,9 +124,12 @@ int main(int argc, const char** argv)
   {
     Anew[IDX(Nx-1,j)] = sin(pi * j / (Ny-1))*exp(-pi);
   }
-
+#pragma omp parallel \
+			default(none) shared(dt, T,hnudt, A, Anew, Nx, Ny) private(i, j, t)
+    {
   for (t = 0; t < T; t+=dt)
-  {
+  { 
+    #pragma omp for schedule(static)
     for( j = 1; j < Ny-1; j++ )
     {
       for(i = 1; i < Nx-1; i++)
@@ -123,6 +139,9 @@ int main(int argc, const char** argv)
       }
     }
     
+    
+    //std::swap<double*>(A, Anew);
+    #pragma omp for schedule(static)
     for(j = 1; j < Ny-1; j++ )
     {
       for(i = 1; i < Nx-1; i++)
@@ -130,18 +149,35 @@ int main(int argc, const char** argv)
         A[IDX(i,j)] = Anew[IDX(i,j)];    
       }
     }    
-    
+  
+    }
+
   }
 
   boost::chrono::high_resolution_clock::time_point t2 = boost::chrono::high_resolution_clock::now();
 
+  for( j = 1; j < Ny-1; j++ )
+    {
+      for(i = 1; i < Nx-1; i++)
+      {
+        u = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(dx*(i)))*sin(pi/Ly*(dy*(j)));
+
+        error = error + sqrt(abs(A[IDX(i,j)]*A[IDX(i,j)]-u*u));
+        max_error = fmax(max_error, fabs((A[IDX(i,j)]-u)/u));
+
+        //std::cout << dx*(i) << ", "<< dy*(j) << ", " << (A[IDX(i,j)]) << ", " << u << ", " << fabs((A[IDX(i,j)]-u))/u << std::endl;
+      }
+    }
+
+  
+
   boost::chrono::milliseconds time_spent = boost::chrono::duration_cast<boost::chrono::milliseconds>(t2-t1);
 
   printMatrix(A, Ny, Nx, "output.txt");
-	
-	std::cout << "-- Run-time: " << 
-			time_spent.count() << " ms --\n";
+	// std::cout << "-- Run-time: " << 
+	// 		time_spent.count() << " ms --\n";
 
+  std::cout << "\n" <<time_spent.count() << " " << max_error*100;
 
   delete[] A;
   delete[] Anew;

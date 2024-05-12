@@ -1,8 +1,8 @@
 CC       = g++
-OMPFLAGS = -Ofast -lm
+OMPFLAGS = -O3 -fopenmp 
 
 BIN =  diffusion
-LIBS = -lboost_chrono
+LIBS = -lboost_chrono -lm
 
 all: $(BIN)
 
