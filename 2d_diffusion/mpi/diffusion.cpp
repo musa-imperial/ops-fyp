@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <boost/chrono.hpp>
 #include <mpi.h>
+#include <omp.h>
 
 
 #define IDX(I,J) ((J)*(Nx+2) + (I))
@@ -88,9 +89,9 @@ int main(int argc, char **argv)
 
   double t;
   double dt   = 0.001;
-  double T    = 1;
-  int    Global_Nx   = 40;
-  int    Global_Ny   = 40;
+  double T    = 1.0;
+  int    Global_Nx   = 2000;
+  int    Global_Ny   = 2000;
 
   double u;
   double error = 0;
@@ -133,6 +134,9 @@ int main(int argc, char **argv)
 
 
   int i, j;
+
+  int io = 0;
+  int jo = 0;
 
   double pi  = 2.0 * asin(1.0);
 
@@ -219,94 +223,112 @@ int main(int argc, char **argv)
 
   printMatrix(A, Ny+2, Nx+2, domain_range_idx, "initial_condition.txt");
 
+  // #pragma omp parallel \
+  //   default(shared)
+
+  // {
+    int nThreads;
+    #pragma omp parallel default(shared)
+    {
+      nThreads = omp_get_num_threads();
+    }
+    std::cout << "    Number of threads: " << nThreads << "\n";
+
+  #pragma omp parallel \
+     default(shared) private(i, j, t)
+  {
   for (t = 0; t < T; t+=dt)
   {
-    if (rank==0) std::cout << "Current time step: " <<t << std::endl;
-    MPI_Status status;
-
-    //use differnet tag for different exchange
-
-    // send to left + receive from right
-    int tag = 1;
-    //for left edge, there is no element need to send to left
-    for( j = interior_range_idx[2]; j < interior_range_idx[3]+1; j++ )
-    {
-      //if (rank==0) std::cout << "Entered for loop " << std::endl;
-      if (leftId != MPI_PROC_NULL)
+    #pragma omp master
       {
-          //send to left
-          //send the comp domain
-          
-          MPI_Send(&A[IDX(interior_range_idx[0], j)], 1, MPI_DOUBLE, leftId, tag, MPI_COMM_WORLD);
-          
-      }
-      
-      if (rightId != MPI_PROC_NULL)
-      {
-          //rcv from right
-          //put into ghost
-          
-          MPI_Recv(&A[IDX(interior_range_idx[1]+1, j)], 1, MPI_DOUBLE, rightId, tag, MPI_COMM_WORLD, &status);
-      }
+        //if (rank==0) std::cout << "Current time step: " <<t << std::endl;
+        MPI_Status status;
 
-      // send to right + receive from left
-      tag = 2;
-      //get right value
-      if (rightId != MPI_PROC_NULL)//(x != blocks_x - 1)
-      {
-          //send to right
-          //send the comp domain
-          
-          MPI_Send(&A[IDX(interior_range_idx[1], j)], 1, MPI_DOUBLE, rightId, tag, MPI_COMM_WORLD);
-      }
+        //use differnet tag for different exchange
 
-      if (leftId != MPI_PROC_NULL)
-      {
-          //rcv from left
-          //put into ghost
+        // send to left + receive from right
+        int tag = 1;
+        //for left edge, there is no element need to send to left
+        for(int  jm = interior_range_idx[2]; jm < interior_range_idx[3]+1; jm++ )
+        {
+          //if (rank==0) std::cout << "Entered for loop " << std::endl;
+          if (leftId != MPI_PROC_NULL)
+          {
+              //send to left
+              //send the comp domain
+              
+              MPI_Send(&A[IDX(interior_range_idx[0], jm)], 1, MPI_DOUBLE, leftId, tag, MPI_COMM_WORLD);
+              
+          }
           
-          MPI_Recv(&A[IDX(interior_range_idx[0]-1, j)], 1, MPI_DOUBLE, leftId, tag, MPI_COMM_WORLD, &status);
-      }
-    
-    }
-    
-    //std::cout << "rank: " << rank << "middle " << std::endl;
-   
-    //send up + receive from below
-    tag = 3;
-    if (upId != MPI_PROC_NULL)
-    {
-        //send to up
-        //send comp domain as vector
+          if (rightId != MPI_PROC_NULL)
+          {
+              //rcv from right
+              //put into ghost
+              
+              MPI_Recv(&A[IDX(interior_range_idx[1]+1, jm)], 1, MPI_DOUBLE, rightId, tag, MPI_COMM_WORLD, &status);
+          }
+
+          // send to right + receive from left
+          tag = 2;
+          //get right value
+          if (rightId != MPI_PROC_NULL)//(x != blocks_x - 1)
+          {
+              //send to right
+              //send the comp domain
+              
+              MPI_Send(&A[IDX(interior_range_idx[1], jm)], 1, MPI_DOUBLE, rightId, tag, MPI_COMM_WORLD);
+          }
+
+          if (leftId != MPI_PROC_NULL)
+          {
+              //rcv from left
+              //put into ghost
+              
+              MPI_Recv(&A[IDX(interior_range_idx[0]-1, jm)], 1, MPI_DOUBLE, leftId, tag, MPI_COMM_WORLD, &status);
+          }
         
-        MPI_Send(&A[IDX(interior_range_idx[0], interior_range_idx[3])], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, upId, tag, MPI_COMM_WORLD); //Fix
-    }
-
-    //rcv down value
-    if (downId != MPI_PROC_NULL)
-    {
-        MPI_Recv(&A[IDX(interior_range_idx[0], interior_range_idx[2]-1)], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, downId, tag, MPI_COMM_WORLD, &status);
-    }
-
-    // send down + receive from above
-    tag = 4;
-    if (downId != MPI_PROC_NULL)
-    {
-        // send to down
-      
-        MPI_Send(&A[IDX(interior_range_idx[0], interior_range_idx[2])], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, downId, tag, MPI_COMM_WORLD);
-    }
-    if (upId != MPI_PROC_NULL)
-    {
-        //rcv from up
-
-        //std::cout << "rank: " <<rank << " " << interior_range_idx[0] << ", "<< interior_range_idx[3] << std::endl;
-        MPI_Recv(&A[IDX(interior_range_idx[0], interior_range_idx[3]+1)], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, upId, tag, MPI_COMM_WORLD, &status);
+        }
         
+        //std::cout << "rank: " << rank << "middle " << std::endl;
+      
+        //send up + receive from below
+        tag = 3;
+        if (upId != MPI_PROC_NULL)
+        {
+            //send to up
+            //send comp domain as vector
+            
+            MPI_Send(&A[IDX(interior_range_idx[0], interior_range_idx[3])], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, upId, tag, MPI_COMM_WORLD); //Fix
+        }
+
+        //rcv down value
+        if (downId != MPI_PROC_NULL)
+        {
+            MPI_Recv(&A[IDX(interior_range_idx[0], interior_range_idx[2]-1)], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, downId, tag, MPI_COMM_WORLD, &status);
+        }
+
+        // send down + receive from above
+        tag = 4;
+        if (downId != MPI_PROC_NULL)
+        {
+            // send to down
+          
+            MPI_Send(&A[IDX(interior_range_idx[0], interior_range_idx[2])], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, downId, tag, MPI_COMM_WORLD);
+        }
+        if (upId != MPI_PROC_NULL)
+        {
+            //rcv from up
+
+            //std::cout << "rank: " <<rank << " " << interior_range_idx[0] << ", "<< interior_range_idx[3] << std::endl;
+            MPI_Recv(&A[IDX(interior_range_idx[0], interior_range_idx[3]+1)], interior_range_idx[1]-interior_range_idx[0]+1, MPI_DOUBLE, upId, tag, MPI_COMM_WORLD, &status);
+            
+        }
     }
+    #pragma omp barrier
 
-     //MPI_Barrier(MPI_COMM_WORLD);
-
+  
+    #pragma omp for schedule(static)
      for( j = interior_range_idx[2]; j < interior_range_idx[3]+1; j++ )
     {
       for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
@@ -316,7 +338,7 @@ int main(int argc, char **argv)
       }
     }
     
-    
+    #pragma omp for schedule(static)
     for( j = interior_range_idx[2]; j < interior_range_idx[3]+1; j++ )
     {
       for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
@@ -324,12 +346,13 @@ int main(int argc, char **argv)
         A[IDX(i,j)] = Anew[IDX(i,j)];    
       }
     }
-
+    
+    
     
     //   
     //end of time integration loop 
   }
-
+  }
   
   for( j = interior_range_idx[2]; j < interior_range_idx[3]+1; j++ )
     {
