@@ -71,35 +71,19 @@ int main(int argc, const char** argv)
   boost::chrono::high_resolution_clock::time_point t1 = boost::chrono::high_resolution_clock::now(); // start time
   clock_t begin = clock();
   for (i = 0; i < Nx; i++)
-    A[IDX(i,0)]   = 0;
-
-  for (i = 0; i < Nx; i++)
-    A[IDX(i,Ny-1)] = 0;
-
-  for (j = 0; j < Ny; j++)
-  {
-    A[IDX(0,j)] = 0;//sin(pi * j / (Ny-1));
-  }
+    {
+      A[IDX(i,0)]   = 0.0;
+      A[IDX(i,Ny-1)] = 0.0;
+      Anew[IDX(i,0)]   = 0.0;
+      Anew[IDX(i,Ny-1)] = 0.0;
+    }
 
   for (j = 0; j < Ny; j++)
   {
-    A[IDX(Nx-1,j)] = 0;//sin(pi * j / (Ny-1))*exp(-pi);
-  }
-
-  for (i = 0; i < Nx; i++)
-    Anew[IDX(i,0)]   = 0.0;
-
-  for (i = 0; i < Nx; i++)
-    Anew[IDX(i,Ny-1)] = 0.0;
-
-  for (j = 0; j < Ny; j++)
-  {
-    Anew[IDX(0,j)] = sin(pi * j / (Ny-1));
-  }
-
-  for (j = 0; j < Ny; j++)
-  {
-    Anew[IDX(Nx-1,j)] = sin(pi * j / (Ny-1))*exp(-pi);
+    A[IDX(0,j)] = 0;
+    A[IDX(Nx-1,j)] = 0;
+    Anew[IDX(0,j)] = 0.0;
+    Anew[IDX(Nx-1,j)] = 0.0;
   }
 
   //initial condition
