@@ -43,13 +43,14 @@ int main(int argc, const char** argv)
   // double dx = Lx / (Nx-1);
   // double dy = Ly / (Ny-1);
 
-  double nu   = 0.1;
+  double mu   = 0.1;
 
   //calculate dx, dy
   dx = Lx / (Nx-1);
   dy = Ly / (Ny-1);
 
-  double hnudt = nu*dt/dx/dx;
+  double hmudt = mu*dt/dx/dx;
+  double a0 = 1-4*hmudt;
 
 
   int i, j;
@@ -125,7 +126,7 @@ int main(int argc, const char** argv)
     Anew[IDX(Nx-1,j)] = sin(pi * j / (Ny-1))*exp(-pi);
   }
 #pragma omp parallel \
-			default(none) shared(dt, T,hnudt, A, Anew, Nx, Ny) private(i, j, t)
+			default(shared)  private(i, j, t)
     {
   for (t = 0; t < T; t+=dt)
   { 
@@ -134,8 +135,8 @@ int main(int argc, const char** argv)
     {
       for(i = 1; i < Nx-1; i++)
       {
-        Anew[IDX(i,j)] = A[IDX(i,j)]+hnudt*(A[IDX(i+1,j)]+A[IDX(i-1,j)]+A[IDX(i,j+1)]+A[IDX(i,j-1)]-4*A[IDX(i,j)]); 
-        
+        //Anew[IDX(i,j)] = A[IDX(i,j)]+hmudt*(A[IDX(i+1,j)]+A[IDX(i-1,j)]+A[IDX(i,j+1)]+A[IDX(i,j-1)]-4*A[IDX(i,j)]); 
+        Anew[IDX(i,j)] = a0*A[IDX(i,j)]+hmudt*(A[IDX(i+1,j)]+A[IDX(i-1,j)]+A[IDX(i,j+1)]+A[IDX(i,j-1)]);
       }
     }
     
@@ -160,7 +161,7 @@ int main(int argc, const char** argv)
     {
       for(i = 1; i < Nx-1; i++)
       {
-        u = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(dx*(i)))*sin(pi/Ly*(dy*(j)));
+        u = 5*exp(-mu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(dx*(i)))*sin(pi/Ly*(dy*(j)));
 
         error = error + sqrt(abs(A[IDX(i,j)]*A[IDX(i,j)]-u*u));
         max_error = fmax(max_error, fabs((A[IDX(i,j)]-u)/u));

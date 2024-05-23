@@ -8,7 +8,7 @@ double dt = 0.001;
 double T = 1;
 int    Nx = 40-2;
 int    Ny = 40-2;
-double nu = 0.1;
+double mu = 0.1;
 
 double a = 0.1;
 
@@ -24,7 +24,8 @@ double Ly = dy*(Ny+2-1);
 
 double h = dx;
 
-double hnudt=nu/h/h*dt;
+double hmudt=mu/h/h*dt;
+double a0 = 1-4*hmudt;
 
 
 #define OPS_2D
@@ -71,7 +72,7 @@ int main(int argc, const char** argv)
   ops_decl_const("T",1,"double",&T);
   ops_decl_const("Nx",1,"int",&Nx);
   ops_decl_const("Ny",1,"int",&Ny);
-  ops_decl_const("nu",1,"double",&nu);
+  ops_decl_const("mu",1,"double",&mu);
 
   ops_decl_const("a",1,"double",&a);
 
@@ -80,7 +81,8 @@ int main(int argc, const char** argv)
   ops_decl_const("Lx",1,"double",&Lx);
   ops_decl_const("Ly",1,"double",&Ly);
   ops_decl_const("h",1,"double",&h);
-  ops_decl_const("hnudt",1,"double",&hnudt);
+  ops_decl_const("hmudt",1,"double",&hmudt);
+  ops_decl_const("a0",1,"double",&a0);
 
   //ops_printf("\nLx = %lf\n",Lx);
 

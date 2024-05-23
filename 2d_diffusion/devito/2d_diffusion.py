@@ -14,7 +14,7 @@ Ny = 4000
 T = 1.0
 nt = 1000
 dt = 0.001
-nu = 0.1
+mu = 0.1
 
 dx = 1.0
 dy = 1.0
@@ -54,7 +54,7 @@ op = Operator([eq_stencil]+bc, opt=('advanced', {'openmp': True}))
 
 start_time = time.time() 
 
-op(time=nt, dt=dt, a=nu)
+op(time=nt, dt=dt, a=mu)
 
 end_time = time.time()
 
@@ -65,7 +65,7 @@ print(f"Runtime: {elapsed_time} seconds")
 #Solution checking
 u_analytical = TimeFunction(name='u_analytical', grid=grid, space_order=2, dtype=np.float64)
 error_field = TimeFunction(name='error_field', grid=grid, space_order=2, dtype=np.float64)
-u_analytical = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*nt*dt)*sin(pi/Lx*x)*sin(pi/Ly*y)
+u_analytical = 5*exp(-mu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*nt*dt)*sin(pi/Lx*x)*sin(pi/Ly*y)
 
 error_eq = Eq(error_field, abs((u_analytical-u)/u_analytical), subdomain=grid.interior)
 

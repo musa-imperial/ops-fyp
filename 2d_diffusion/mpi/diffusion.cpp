@@ -90,8 +90,8 @@ int main(int argc, char **argv)
   double t;
   double dt   = 0.001;
   double T    = 1.0;
-  int    Global_Nx   = 2000;
-  int    Global_Ny   = 2000;
+  int    Global_Nx   = 40;
+  int    Global_Ny   = 40;
 
   double u;
   double error = 0;
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 
   int    Npts = (Nx+2)*(Ny+2);
 
-  double nu   = 0.1;
+  double mu   = 0.1;
 
   //calculate dx, dy
   double dx = 1;
@@ -130,8 +130,8 @@ int main(int argc, char **argv)
         std::cerr << "Error: " << e.what() << std::endl;
         std::exit(EXIT_FAILURE);
     }
-  double hnudt = nu*dt/dx/dx;
-
+  double hmudt = mu*dt/dx/dx;
+  double a0 = 1-4*hmudt;
 
   int i, j;
 
@@ -333,7 +333,8 @@ int main(int argc, char **argv)
     {
       for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
       {
-        Anew[IDX(i,j)] = A[IDX(i,j)]+hnudt*(A[IDX(i+1,j)]+A[IDX(i-1,j)]+A[IDX(i,j+1)]+A[IDX(i,j-1)]-4*A[IDX(i,j)]); 
+        //Anew[IDX(i,j)] = A[IDX(i,j)]+hmudt*(A[IDX(i+1,j)]+A[IDX(i-1,j)]+A[IDX(i,j+1)]+A[IDX(i,j-1)]-4*A[IDX(i,j)]); 
+        Anew[IDX(i,j)] = a0*A[IDX(i,j)]+hmudt*(A[IDX(i+1,j)]+A[IDX(i-1,j)]+A[IDX(i,j+1)]+A[IDX(i,j-1)]);
         
       }
     }
@@ -358,7 +359,7 @@ int main(int argc, char **argv)
     {
       for(i = interior_range_idx[0]; i <interior_range_idx[1]+1; i++)
       {
-        u = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(x_corner+dx*(i-1)))*sin(pi/Ly*(y_corner+dy*(j-1)));
+        u = 5*exp(-mu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(x_corner+dx*(i-1)))*sin(pi/Ly*(y_corner+dy*(j-1)));
 
         error = error + sqrt(abs(A[IDX(i,j)]*A[IDX(i,j)]-u*u));
         max_error = fmax(max_error, fabs((A[IDX(i,j)]-u)/u));

@@ -17,7 +17,7 @@ cudaError_t cudaCheck(cudaError_t result)
 }
 
 // CUDA diffusion kernel
-__global__ void interior_kernel(double *Anew, double *A, int Npts, int Nx, double hnudt) 
+__global__ void interior_kernel(double *Anew, double *A, int Npts, int Nx, double hmudt, double a0) 
 {
     //Get our global thread ID 1D block and grid
     int id = blockIdx.x*blockDim.x+threadIdx.x;
@@ -30,7 +30,7 @@ __global__ void interior_kernel(double *Anew, double *A, int Npts, int Nx, doubl
     if (id < Npts) 
     {
         if (id%Nx!=0 && (id+1)%Nx!=0 && id<Npts-Nx && id>Nx-1)
-        Anew[id] = A[id]+hnudt*(A[id+1]+A[id-1]+A[id+Nx]+A[id-Nx]-4*A[id]);
+        Anew[id] = a0*A[id]+hmudt*(A[id+1]+A[id-1]+A[id+Nx]+A[id-Nx]);
     }
 }
 
@@ -57,9 +57,10 @@ int main()
     double Lx = dx*(Nx-1);
     double Ly = dy*(Ny-1);
 
-    double nu = 0.1;
+    double mu = 0.1;
 
-    double hnudt = nu*dt/dx/dx;
+    double hmudt = mu*dt/dx/dx;
+    double a0 = 1-4*hmudt;
 
     int i, j;
 
@@ -112,7 +113,7 @@ int main()
     cudaEventRecord(start);
     for (t = 0; t < T; t+=dt) {
         // Execute the kernel
-        interior_kernel<<<gridSize, blockSize>>>(d_Anew, d_A, Npts, Nx, hnudt);
+        interior_kernel<<<gridSize, blockSize>>>(d_Anew, d_A, Npts, Nx, hmudt, a0);
 
         copy<<<gridSize, blockSize>>>(d_Anew, d_A, Npts);
 
@@ -132,7 +133,7 @@ int main()
     {
       for(i = 1; i < Nx-1; i++)
       {
-        u = 5*exp(-nu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(dx*(i)))*sin(pi/Ly*(dy*(j)));
+        u = 5*exp(-mu*pi*pi*(1/Lx/Lx+1/Ly/Ly)*T)*sin(pi/Lx*(dx*(i)))*sin(pi/Ly*(dy*(j)));
 
         error = error + sqrt(abs(h_A[IDX(i,j)]*h_A[IDX(i,j)]-u*u));
         max_error = fmax(max_error, fabs((h_A[IDX(i,j)]-u)/u));
