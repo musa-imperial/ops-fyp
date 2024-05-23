@@ -1,11 +1,15 @@
 #!/bin/bash
 
-max_thread_count=48
-max_core_count=4
+max_thread_count=32
+max_core_count=32
+reps=3
+
 
 compiler="gnu"
 
-parallel="openmp"
+parallel="mpi"
+
+
 
 export OPS_INSTALL_PATH=/home/musa/apps/OPS/ops
 
@@ -35,31 +39,35 @@ elif [ "$compiler" = "gnu" ]; then
 fi
 
 ./removescript.sh
-make diffusion_seq
+make diffusion_seq diffusion_openmp diffusion_mpi
 
 if [ "$parallel" = "openmp" ]; then
     echo -n " Runtime, Max, Thread count" > benchmark_output.txt
-    for (( t=1; t<=$max_thread_count; t++ )); do
-        export OMP_NUM_THREADS=$t
-        pi=$(./diffusion_seq)
-        echo -n "$pi $t" >> benchmark_output.txt
-        echo -n >> benchmark_output.txt
-        echo "Runtime, Max"
-        echo "$pi"
-        echo "Thread count: $t"
+    for (( r=1; r<=$reps; r++ )); do
+        for (( t=1; t<=$max_thread_count; t++ )); do
+            export OMP_NUM_THREADS=$t
+            pi=$(./diffusion_openmp)
+            echo -n "$pi $t" >> benchmark_output.txt
+            echo -n >> benchmark_output.txt
+            echo "Runtime, Max"
+            echo "$pi"
+            echo "Thread count: $t"
+        done
     done
 elif [ "$parallel" = "mpi" ]; then
     echo -n " Runtime, Max, Core count" > benchmark_output.txt
-    for (( t=1; t<=$max_core_count; t++ )); do
-        export OMP_NUM_THREADS=1
-        pi=$(mpiexec -np $t ./diffusion_seq)
-        for (( s=$t; s>=2; s-- )); do
-            pi=$(sed '$d' <<< "$pi")
-        done 
-        echo -n "$pi $t" >> benchmark_output.txt
-        echo -n >> benchmark_output.txt
-        echo "Runtime, Max"
-        echo "$pi"
-        echo "Core count: $t"
+    for (( r=1; r<=$reps; r++ )); do
+        for (( t=1; t<=$max_core_count; t++ )); do
+            export OMP_NUM_THREADS=1
+            pi=$(mpiexec -np $t ./diffusion_mpi)
+            #for (( s=$t; s>=3; s-- )); do
+                #pi=$(sed '$d' <<< "$pi")
+            #done 
+            echo -n "$pi $t" >> benchmark_output.txt
+            echo -n >> benchmark_output.txt
+            echo "Runtime, Max"
+            echo "$pi"
+            echo "Core count: $t"
+        done
     done
 fi
