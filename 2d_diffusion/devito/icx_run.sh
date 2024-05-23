@@ -1,0 +1,1 @@
+sudo docker run --rm -it -v `pwd`:`pwd` -w `pwd` -u $(id -u):$(id -g) devitocodes/devito:icx-latest python 2d_diffusion.py
