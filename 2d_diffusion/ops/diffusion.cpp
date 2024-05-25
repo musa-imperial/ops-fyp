@@ -41,8 +41,7 @@ int main(int argc, const char** argv)
 	
 	// Precomputing end index of the grid array
 	
-  double *u = NULL;
-  double *u_calc= NULL;
+  double *tmp = NULL;
 
   double ct0, ct1, et0, et1;
 
@@ -63,10 +62,10 @@ int main(int argc, const char** argv)
   int d_p[] =  {1,1};
 
   ops_dat d_u    = ops_decl_dat(block, 1, size, base,
-                               d_m, d_p, u,    "double", "u");
+                               d_m, d_p, tmp,    "double", "u");
 
   ops_dat d_u_calc    = ops_decl_dat(block, 1, size, base,
-                               d_m, d_p, u_calc,    "double", "u_calc");
+                               d_m, d_p, tmp,    "double", "u_calc");
 
   ops_decl_const("dt",1,"double",&dt);
   ops_decl_const("T",1,"double",&T);
@@ -163,8 +162,7 @@ int main(int argc, const char** argv)
   //Finalising the OPS library
   
   ops_exit();
-  free(u);
-  free(u_calc);
+  free(tmp);
   return 0;
 }
 
