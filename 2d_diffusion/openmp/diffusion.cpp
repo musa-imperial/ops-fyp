@@ -26,11 +26,11 @@ void printMatrix(const double* array, int rows, int cols, const std::string& fil
 int main(int argc, const char** argv)
 {
   double t;
-  double dt   = 0.01;
+  double dt   = 0.001;
   double T    = 1.0;
   
-  int    Nx   = 200;
-  int    Ny   = 200;
+  int    Nx   = 40;
+  int    Ny   = 40;
   int    Npts = Nx*Ny;
 
   double dx = 1;
