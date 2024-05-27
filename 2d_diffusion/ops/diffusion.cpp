@@ -6,8 +6,8 @@
 
 double dt = 0.001;
 double T = 1;
-int    Nx = 40-2;
-int    Ny = 40-2;
+int    Nx = 4000-2;
+int    Ny = 4000-2;
 double mu = 0.1;
 
 double a = 0.1;
